@@ -115,7 +115,7 @@ class SlackEventHandler:
             # ✅ React with ✅ after applying to log it in Airtable.
             
             patterns = {
-                'match_score': r'New Job Match – (\d+)% Match',
+                'match_score': r'New Job Match – ([\d.]+)% Match',
                 'title': r'\*Title:\* ([^\n]+)',
                 'company': r'\*Company:\* ([^\n]+)',
                 'location': r'\*Location:\* ([^\n]+)',
@@ -123,7 +123,7 @@ class SlackEventHandler:
                 'source': r'\*Source:\* ([^\n]+)',
                 'resume': r'\*Recommended Resume:\* ([^\n]+)',
                 'keywords': r'\*Matched Keywords:\* ([^\n]+)',
-                'url': r'🔗 \*Apply Now:\* <([^>]+)>'
+                'url': r'🔗 \*Apply Now:\* <([^>|]+)'
             }
             
             job_info = {}
