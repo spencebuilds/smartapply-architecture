@@ -41,10 +41,13 @@ class SlackEventHandler:
                 return False
             
             # Get the original message
+            self.logger.info(f"Retrieving message from channel {channel} at timestamp {timestamp}")
             message_data = self._get_message_data(channel, timestamp)
             if not message_data:
                 self.logger.error(f"Could not retrieve message data for timestamp: {timestamp}")
                 return False
+            
+            self.logger.info(f"Retrieved message data: {message_data.get('text', 'No text field')[:100]}...")
             
             # Extract job information from the message
             job_info = self._extract_job_info_from_message(message_data)
@@ -69,6 +72,7 @@ class SlackEventHandler:
     def _get_message_data(self, channel: str, timestamp: str) -> Optional[Dict[str, Any]]:
         """Retrieve message data from Slack."""
         try:
+            self.logger.info(f"Calling conversations_history for channel={channel}, timestamp={timestamp}")
             response = self.client.conversations_history(
                 channel=channel,
                 latest=timestamp,
@@ -76,8 +80,14 @@ class SlackEventHandler:
                 inclusive=True
             )
             
+            self.logger.info(f"Slack API response ok: {response.get('ok')}, messages count: {len(response.get('messages', []))}")
+            
             if response["ok"] and response["messages"]:
-                return response["messages"][0]
+                message = response["messages"][0]
+                self.logger.info(f"Message timestamp: {message.get('ts')}, expected: {timestamp}")
+                return message
+            else:
+                self.logger.warning(f"No messages found or API error: {response}")
             
         except SlackApiError as e:
             self.logger.error(f"Slack API error retrieving message: {e.response['error']}")
