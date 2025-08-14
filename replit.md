@@ -28,11 +28,12 @@ Preferred communication style: Simple, everyday language.
 - ✅ Complete message parsing system operational with emoji text code handling
 - ✅ Airtable integration working with correct field mappings for existing table structure
 
-## Updated Resume Keyword Sets
+## Updated Resume Keyword Sets & Threshold Adjustment
 - Resume A: Platform Infrastructure (14 keywords)
 - Resume B: Developer Tools & Observability (12 keywords)  
 - Resume C: Billing & Revenue Platform (12 keywords)
 - Improved keyword matching algorithm for better phrase detection
+- **August 14**: Temporarily lowered match threshold from 80% to 60% after comprehensive scan of 2,764 jobs found 192 PM positions but zero 80%+ matches - threshold was too restrictive for current market
 
 # System Architecture
 
