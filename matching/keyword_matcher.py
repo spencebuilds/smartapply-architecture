@@ -111,8 +111,44 @@ class KeywordMatcher:
             'matched_keyword_count': len(matched_keywords)
         }
     
+    def is_product_manager_role(self, job: Dict[str, Any]) -> bool:
+        """Check if a job is a Product Manager role."""
+        title = job.get('title', '').lower()
+        description = job.get('description', '').lower()
+        department = job.get('department', '').lower()
+        
+        # Product Manager keywords in title
+        pm_title_keywords = [
+            'product manager', 'product lead', 'product owner', 'product director',
+            'senior product manager', 'staff product manager', 'principal product manager',
+            'group product manager', 'product management', 'pm -', 'product strategy'
+        ]
+        
+        # Check title first (most important)
+        for keyword in pm_title_keywords:
+            if keyword in title:
+                return True
+        
+        # Check department
+        if 'product' in department and any(word in title for word in ['manager', 'lead', 'director', 'owner']):
+            return True
+        
+        return False
+
     def match_job(self, job: Dict[str, Any]) -> Dict[str, Any]:
         """Match a job against all resume profiles and return the best match."""
+        # First check if this is a Product Manager role
+        if not self.is_product_manager_role(job):
+            # Return a low score result for non-PM roles
+            return {
+                'job_id': job['id'],
+                'all_matches': [],
+                'best_resume': 'None',
+                'best_match_score': 0.0,
+                'best_matched_keywords': [],
+                'recommendation': 'Not a Product Manager role - skipped'
+            }
+        
         profiles = self.resume_profiles.get_all_profiles()
         match_results = []
         
@@ -124,6 +160,9 @@ class KeywordMatcher:
         # Find best match
         best_match = max(match_results, key=lambda x: x['match_score'])
         
+        # Boost score for PM roles since they passed the filter
+        best_match['match_score'] = min(100.0, best_match['match_score'] * 1.2)
+        
         result = {
             'job_id': job['id'],
             'all_matches': match_results,
@@ -133,7 +172,7 @@ class KeywordMatcher:
             'recommendation': self._generate_recommendation(best_match)
         }
         
-        self.logger.info(f"Job {job['id']} best match: {best_match['profile_name']} ({best_match['match_score']}%)")
+        self.logger.info(f"PM Job {job['id']} best match: {best_match['profile_name']} ({best_match['match_score']}%)")
         if best_match['match_score'] > 0:
             self.logger.info(f"Matched keywords: {best_match['matched_keywords'][:5]}")
         

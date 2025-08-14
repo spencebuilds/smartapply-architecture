@@ -21,8 +21,8 @@ class Config:
         self.AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID", "")
         self.AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME", "Job Applications")
         
-        # Job Matching Configuration - temporarily lowered for testing
-        self.MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD", "20.0"))
+        # Job Matching Configuration - back to 80% for PM roles
+        self.MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD", "80.0"))
         
         # Target Companies (no longer used for filtering, kept for backward compatibility)
         companies_str = os.getenv("TARGET_COMPANIES", "")
