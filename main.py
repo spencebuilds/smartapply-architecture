@@ -83,7 +83,14 @@ class JobApplicationSystem:
                     # Mark job as processed
                     self.job_storage.mark_job_processed(job['id'])
                     
-                    self.logger.info(f"Job {job['id']} matched with score {match_result['best_match_score']}%")
+                    self.logger.info(f"Job {job['id']} matched with score {match_result['best_match_score']}% - SENDING NOTIFICATION")
+                else:
+                    # Suppress low-scoring jobs - only log if it's a PM role that didn't meet threshold
+                    if match_result['best_match_score'] > 0:  # Only log actual PM roles
+                        self.logger.info(f"Job {job['id']} ({job.get('title', 'Unknown')}) scored {match_result['best_match_score']}% - SUPPRESSED (below {self.config.MATCH_THRESHOLD}% threshold)")
+                    
+                    # Still mark as processed to avoid reprocessing
+                    self.job_storage.mark_job_processed(job['id'])
                 
             except Exception as e:
                 self.logger.error(f"Error processing job {job.get('id', 'unknown')}: {str(e)}")
