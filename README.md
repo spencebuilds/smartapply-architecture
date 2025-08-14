@@ -35,7 +35,7 @@ Set these environment variables in your Replit Secrets:
 - `AIRTABLE_BASE_ID`: Your Airtable base ID
 
 ### Optional
-- `TARGET_COMPANIES`: Comma-separated company names (default: "stripe,github,shopify,airbnb,uber,netflix,spotify")
+- `TARGET_COMPANIES`: No longer required - system now fetches all available jobs
 - `MATCH_THRESHOLD`: Minimum match score for notifications (default: 80.0)
 - `CHECK_INTERVAL_MINUTES`: How often to check for jobs (default: 15)
 - `AIRTABLE_TABLE_NAME`: Airtable table name (default: "Job Applications")

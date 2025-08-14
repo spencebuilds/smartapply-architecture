@@ -20,7 +20,7 @@ class GreenhouseClient:
     def fetch_jobs_for_company(self, company: str) -> List[Dict[str, Any]]:
         """Fetch job postings for a specific company from Greenhouse."""
         try:
-            url = f"{self.base_url}/boards/{company}/jobs"
+            url = f"https://boards-api.greenhouse.io/v1/boards/{company}/jobs"
             headers = {}
             
             if self.config.GREENHOUSE_API_KEY:
@@ -50,18 +50,32 @@ class GreenhouseClient:
             return jobs
             
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Error fetching Greenhouse jobs for {company}: {str(e)}")
+            self.logger.debug(f"No Greenhouse jobs available for {company}: {str(e)}")
             return []
         except Exception as e:
             self.logger.error(f"Unexpected error fetching Greenhouse jobs for {company}: {str(e)}")
             return []
     
-    def fetch_jobs(self, companies: List[str]) -> List[Dict[str, Any]]:
-        """Fetch job postings for multiple companies from Greenhouse."""
-        all_jobs = []
+    def fetch_all_jobs(self) -> List[Dict[str, Any]]:
+        """Fetch all available job postings from Greenhouse."""
+        # Common company identifiers that use Greenhouse
+        companies = [
+            "stripe", "github", "shopify", "airbnb", "uber", "netflix", "spotify",
+            "slack", "atlassian", "coinbase", "twitch", "square", "discord", "zoom",
+            "asana", "dropbox", "pinterest", "palantir", "checkr", "gusto", "retool",
+            "mixpanel", "amplitude", "buildkite", "apollo", "lattice", "workato",
+            "greenhouse", "airtable", "loom", "linear", "superhuman", "notion",
+            "figma", "robinhood", "plaid", "brex", "rippling", "zapier", "segment"
+        ]
         
+        all_jobs = []
         for company in companies:
             jobs = self.fetch_jobs_for_company(company)
             all_jobs.extend(jobs)
         
+        self.logger.info(f"Total jobs fetched from Greenhouse: {len(all_jobs)}")
         return all_jobs
+    
+    def fetch_jobs(self, companies: List[str] | None = None) -> List[Dict[str, Any]]:
+        """Fetch job postings - now fetches all available jobs."""
+        return self.fetch_all_jobs()

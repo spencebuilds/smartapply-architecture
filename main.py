@@ -42,20 +42,20 @@ class JobApplicationSystem:
         self.logger.info("Job Application System initialized successfully")
     
     def fetch_all_jobs(self) -> List[Dict[str, Any]]:
-        """Fetch jobs from all configured sources."""
+        """Fetch jobs from all available sources."""
         all_jobs = []
         
-        # Fetch from Lever
+        # Fetch from Lever - now fetches all available jobs
         try:
-            lever_jobs = self.lever_client.fetch_jobs(self.config.TARGET_COMPANIES)
+            lever_jobs = self.lever_client.fetch_jobs()
             all_jobs.extend(lever_jobs)
             self.logger.info(f"Fetched {len(lever_jobs)} jobs from Lever")
         except Exception as e:
             self.logger.error(f"Error fetching Lever jobs: {str(e)}")
         
-        # Fetch from Greenhouse
+        # Fetch from Greenhouse - now fetches all available jobs
         try:
-            greenhouse_jobs = self.greenhouse_client.fetch_jobs(self.config.TARGET_COMPANIES)
+            greenhouse_jobs = self.greenhouse_client.fetch_jobs()
             all_jobs.extend(greenhouse_jobs)
             self.logger.info(f"Fetched {len(greenhouse_jobs)} jobs from Greenhouse")
         except Exception as e:

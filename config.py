@@ -24,9 +24,9 @@ class Config:
         # Job Matching Configuration
         self.MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD", "80.0"))
         
-        # Target Companies
-        companies_str = os.getenv("TARGET_COMPANIES", "stripe,github,shopify,airbnb,uber,netflix,spotify")
-        self.TARGET_COMPANIES = [company.strip() for company in companies_str.split(",") if company.strip()]
+        # Target Companies (no longer used for filtering, kept for backward compatibility)
+        companies_str = os.getenv("TARGET_COMPANIES", "")
+        self.TARGET_COMPANIES = [company.strip() for company in companies_str.split(",") if company.strip()] if companies_str else []
         
         # Scheduling Configuration
         self.CHECK_INTERVAL_MINUTES = int(os.getenv("CHECK_INTERVAL_MINUTES", "15"))
@@ -52,5 +52,4 @@ class Config:
         if missing_vars:
             raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
         
-        if not self.TARGET_COMPANIES:
-            raise ValueError("TARGET_COMPANIES environment variable must be set with comma-separated company names")
+        # No longer require TARGET_COMPANIES since we fetch all available jobs

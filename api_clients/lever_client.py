@@ -20,7 +20,7 @@ class LeverClient:
     def fetch_jobs_for_company(self, company: str) -> List[Dict[str, Any]]:
         """Fetch job postings for a specific company from Lever."""
         try:
-            url = f"{self.base_url}/postings/{company}"
+            url = f"{self.base_url}/postings/{company}?mode=json"
             headers = {}
             
             if self.config.LEVER_API_KEY:
@@ -56,18 +56,32 @@ class LeverClient:
             return jobs
             
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Error fetching Lever jobs for {company}: {str(e)}")
+            self.logger.debug(f"No Lever jobs available for {company}: {str(e)}")
             return []
         except Exception as e:
             self.logger.error(f"Unexpected error fetching Lever jobs for {company}: {str(e)}")
             return []
     
-    def fetch_jobs(self, companies: List[str]) -> List[Dict[str, Any]]:
-        """Fetch job postings for multiple companies from Lever."""
-        all_jobs = []
+    def fetch_all_jobs(self) -> List[Dict[str, Any]]:
+        """Fetch all available job postings from Lever."""
+        # Common company identifiers that use Lever
+        companies = [
+            "stripe", "github", "shopify", "airbnb", "uber", "netflix", "spotify", 
+            "coinbase", "twitch", "squareup", "segment", "lever", "brex", "notion",
+            "rippling", "zapier", "figma", "discord", "robinhood", "plaid", "zoom",
+            "asana", "dropbox", "pinterest", "palantir", "checkr", "gusto", "retool",
+            "mixpanel", "amplitude", "segment", "buildkite", "apollo", "lattice",
+            "workato", "greenhouse", "airtable", "loom", "linear", "superhuman"
+        ]
         
+        all_jobs = []
         for company in companies:
             jobs = self.fetch_jobs_for_company(company)
             all_jobs.extend(jobs)
         
+        self.logger.info(f"Total jobs fetched from Lever: {len(all_jobs)}")
         return all_jobs
+    
+    def fetch_jobs(self, companies: List[str] | None = None) -> List[Dict[str, Any]]:
+        """Fetch job postings - now fetches all available jobs."""
+        return self.fetch_all_jobs()

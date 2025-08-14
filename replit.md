@@ -8,14 +8,20 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (August 14, 2025)
 
+## Removed Company Filtering - All Jobs Approach
+- System now fetches ALL available jobs from Lever and Greenhouse APIs
+- Removed TARGET_COMPANIES restriction - no more company-specific filtering
+- Updated API URLs: Lever with ?mode=json, Greenhouse with boards-api endpoint
+- Expanded company list to ~40 companies across both platforms
+- Job filtering now ONLY based on keyword matching (≥80% threshold)
+- Expected significantly higher job volume for matching
+
 ## Updated Resume Keyword Sets
-- Replaced generic resume profiles with 3 specialized sets:
-  - Resume A: Platform Infrastructure (14 keywords)
-  - Resume B: Developer Tools & Observability (12 keywords)  
-  - Resume C: Billing & Revenue Platform (12 keywords)
+- Resume A: Platform Infrastructure (14 keywords)
+- Resume B: Developer Tools & Observability (12 keywords)  
+- Resume C: Billing & Revenue Platform (12 keywords)
 - Improved keyword matching algorithm for better phrase detection
 - Enhanced Slack notification format with match percentage and keywords
-- System now fetches 600+ jobs per cycle with targeted matching
 
 # System Architecture
 
