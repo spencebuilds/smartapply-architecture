@@ -23,25 +23,24 @@ class SlackClient:
         match_result = job.get('match_result', {})
         best_resume = match_result.get('best_resume', 'Unknown')
         match_score = match_result.get('best_match_score', 0)
+        matched_keywords = match_result.get('best_matched_keywords', [])
         
-        message = f"""🎯 *New Job Match Found!*
+        # Format resume name for display
+        resume_display = best_resume.replace('_', ' ').replace('Resume ', 'Resume ')
+        
+        message = f"""🎯 *Job Match Found - {match_score}% Match*
 
-*Job Title:* {job['title']}
 *Company:* {job['company']}
-*Location:* {job.get('location', 'Not specified')}
-*Department:* {job.get('department', 'Not specified')}
+*Title:* {job['title']}
+*Match Percentage:* {match_score}%
+*Recommended Resume:* {resume_display}
 
-*Match Details:*
-• Recommended Resume: *{best_resume}*
-• Match Score: *{match_score}%*
-
-*Job Description Preview:*
-{job.get('description', 'No description available')[:300]}...
+*Matched Keywords:* {', '.join(matched_keywords[:8])}{'...' if len(matched_keywords) > 8 else ''}
 
 *Apply Here:* {job.get('url', 'URL not available')}
 
-Source: {job.get('source', 'Unknown').title()}
-Job ID: {job['id']}
+*Location:* {job.get('location', 'Not specified')}
+*Source:* {job.get('source', 'Unknown').title()}
 """
         return message
     

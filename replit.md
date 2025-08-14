@@ -6,6 +6,17 @@ An automated job application system that monitors job postings from multiple sou
 
 Preferred communication style: Simple, everyday language.
 
+# Recent Changes (August 14, 2025)
+
+## Updated Resume Keyword Sets
+- Replaced generic resume profiles with 3 specialized sets:
+  - Resume A: Platform Infrastructure (14 keywords)
+  - Resume B: Developer Tools & Observability (12 keywords)  
+  - Resume C: Billing & Revenue Platform (12 keywords)
+- Improved keyword matching algorithm for better phrase detection
+- Enhanced Slack notification format with match percentage and keywords
+- System now fetches 600+ jobs per cycle with targeted matching
+
 # System Architecture
 
 ## Core Components

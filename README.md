@@ -43,16 +43,16 @@ Set these environment variables in your Replit Secrets:
 
 ## Resume Profiles
 
-The system includes three built-in resume profiles:
+The system includes three specialized resume profiles:
 
-### Software Engineer
-Keywords include: python, javascript, react, api, microservices, docker, aws, sql, system design, testing, agile
+### Resume A: Platform Infrastructure
+Keywords include: platform, infrastructure, microservices, api, scalability, aws, kubernetes, data, analytics, technical product, cloud, ci/cd, observability, cross-functional
 
-### Data Scientist  
-Keywords include: python, sql, machine learning, tensorflow, pandas, statistics, big data, analytics, visualization
+### Resume B: Developer Tools & Observability  
+Keywords include: developer tools, observability, devops, monitoring, alerting, instrumentation, platform engineering, internal tools, logging, on-call, incident, runbooks
 
-### Product Manager
-Keywords include: product management, strategy, roadmap, user experience, analytics, stakeholder management, agile
+### Resume C: Billing & Revenue Platform
+Keywords include: billing, pricing, monetization, payments, revenue, invoicing, payment processor, checkout, stripe, subscription, fintech, business model
 
 ### Custom Profiles
 Add custom profiles by setting the `RESUME_PROFILES` environment variable with JSON format:

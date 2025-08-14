@@ -34,83 +34,28 @@ class ResumeProfiles:
     def _get_default_profiles(self) -> Dict[str, Any]:
         """Get default resume profiles with keyword sets."""
         return {
-            "Software_Engineer": {
+            "Resume_A_Platform_Infrastructure": {
                 "keywords": [
-                    # Programming Languages
-                    "python", "javascript", "java", "c++", "c#", "go", "rust", "typescript",
-                    "react", "angular", "vue", "node.js", "express", "django", "flask",
-                    
-                    # Technologies & Frameworks
-                    "api", "rest", "graphql", "microservices", "docker", "kubernetes",
-                    "aws", "azure", "gcp", "cloud", "devops", "ci/cd", "git", "github",
-                    
-                    # Databases
-                    "sql", "postgresql", "mysql", "mongodb", "redis", "elasticsearch",
-                    
-                    # Concepts
-                    "software development", "full stack", "backend", "frontend",
-                    "system design", "architecture", "scalability", "performance",
-                    "testing", "unit testing", "integration testing", "agile", "scrum"
+                    "platform", "infrastructure", "microservices", "api", "scalability", "aws", "kubernetes",
+                    "data", "analytics", "technical product", "cloud", "ci/cd", "observability", "cross-functional"
                 ],
-                "description": "Software engineering and development focused resume"
+                "description": "General Platform Infrastructure focused resume"
             },
             
-            "Data_Scientist": {
+            "Resume_B_Developer_Tools_Observability": {
                 "keywords": [
-                    # Programming & Tools
-                    "python", "r", "sql", "jupyter", "pandas", "numpy", "scikit-learn",
-                    "tensorflow", "pytorch", "keras", "scipy", "matplotlib", "seaborn",
-                    
-                    # Data Science Concepts
-                    "machine learning", "deep learning", "artificial intelligence",
-                    "data analysis", "statistical analysis", "predictive modeling",
-                    "feature engineering", "model validation", "cross-validation",
-                    
-                    # Statistics & Math
-                    "statistics", "probability", "regression", "classification",
-                    "clustering", "time series", "hypothesis testing", "a/b testing",
-                    
-                    # Big Data & Cloud
-                    "big data", "spark", "hadoop", "databricks", "snowflake",
-                    "aws", "azure", "gcp", "tableau", "power bi", "looker",
-                    
-                    # Business
-                    "data visualization", "business intelligence", "analytics",
-                    "insights", "kpi", "metrics", "reporting", "dashboard"
+                    "developer tools", "observability", "devops", "monitoring", "alerting", "instrumentation",
+                    "platform engineering", "internal tools", "logging", "on-call", "incident", "runbooks"
                 ],
-                "description": "Data science and analytics focused resume"
+                "description": "Developer Tools & Observability focused resume"
             },
             
-            "Product_Manager": {
+            "Resume_C_Billing_Revenue_Platform": {
                 "keywords": [
-                    # Product Management
-                    "product management", "product strategy", "product roadmap",
-                    "product development", "feature prioritization", "user stories",
-                    "requirements gathering", "stakeholder management",
-                    
-                    # Business & Strategy
-                    "business strategy", "market research", "competitive analysis",
-                    "go-to-market", "pricing strategy", "business metrics", "kpi",
-                    "roi", "revenue", "growth", "market analysis",
-                    
-                    # User Experience
-                    "user experience", "ux", "ui", "user research", "customer feedback",
-                    "user testing", "personas", "customer journey", "wireframes",
-                    
-                    # Project Management
-                    "agile", "scrum", "kanban", "jira", "confluence", "project management",
-                    "cross-functional teams", "leadership", "communication",
-                    
-                    # Analytics & Data
-                    "analytics", "data analysis", "metrics", "a/b testing",
-                    "user analytics", "product analytics", "sql", "tableau",
-                    "google analytics", "mixpanel", "amplitude",
-                    
-                    # Technical Understanding
-                    "api", "technical specifications", "system architecture",
-                    "mobile", "web", "saas", "platform", "integration"
+                    "billing", "pricing", "monetization", "payments", "revenue", "invoicing",
+                    "payment processor", "checkout", "stripe", "subscription", "fintech", "business model"
                 ],
-                "description": "Product management and strategy focused resume"
+                "description": "Billing & Revenue Platform focused resume"
             }
         }
     

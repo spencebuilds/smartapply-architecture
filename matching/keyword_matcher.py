@@ -24,7 +24,10 @@ class KeywordMatcher:
         # Convert to lowercase
         text = text.lower()
         
-        # Remove special characters and extra whitespace
+        # Replace common separators with spaces for better keyword matching
+        text = re.sub(r'[/\-_]', ' ', text)
+        
+        # Remove special characters except spaces
         text = re.sub(r'[^\w\s]', ' ', text)
         text = re.sub(r'\s+', ' ', text)
         
@@ -48,45 +51,57 @@ class KeywordMatcher:
         
         return keywords
     
-    def calculate_match_score(self, job_keywords: List[str], profile_keywords: List[str]) -> float:
-        """Calculate match score between job keywords and profile keywords."""
-        if not job_keywords or not profile_keywords:
+    def calculate_match_score(self, job_text: str, profile_keywords: List[str]) -> float:
+        """Calculate match score between job text and profile keywords."""
+        if not job_text or not profile_keywords:
             return 0.0
         
-        job_set = set(job_keywords)
-        profile_set = set(profile_keywords)
+        # Clean the job text for matching
+        cleaned_job_text = self.clean_text(job_text)
         
-        # Calculate intersection
-        matches = job_set.intersection(profile_set)
+        matches = 0
+        total_keywords = len(profile_keywords)
         
-        # Calculate score as percentage of profile keywords found in job
-        score = (len(matches) / len(profile_set)) * 100
-        
-        # Bonus for exact phrase matches in original text
-        job_text = ' '.join(job_keywords)
-        phrase_bonus = 0
-        
+        # Check each profile keyword against the job text
         for keyword in profile_keywords:
-            if len(keyword.split()) > 1 and keyword in job_text:
-                phrase_bonus += 5  # 5% bonus per exact phrase match
+            cleaned_keyword = self.clean_text(keyword)
+            
+            # Check for exact keyword match in the text
+            if cleaned_keyword in cleaned_job_text:
+                matches += 1
+                continue
+            
+            # For multi-word keywords, also check if all words are present
+            if len(cleaned_keyword.split()) > 1:
+                keyword_words = cleaned_keyword.split()
+                if all(word in cleaned_job_text for word in keyword_words):
+                    matches += 1
         
-        final_score = min(100.0, score + phrase_bonus)
+        # Calculate percentage score
+        score = (matches / total_keywords) * 100
         
-        return round(final_score, 2)
+        return round(score, 2)
     
     def match_job_to_profile(self, job: Dict[str, Any], profile_name: str, profile_keywords: List[str]) -> Dict[str, Any]:
         """Match a job to a specific resume profile."""
         # Extract job content for matching
         job_content = f"{job.get('title', '')} {job.get('description', '')} {job.get('department', '')}"
-        job_keywords = self.extract_keywords(job_content)
         
-        # Calculate match score
-        match_score = self.calculate_match_score(job_keywords, profile_keywords)
+        # Calculate match score using the improved algorithm
+        match_score = self.calculate_match_score(job_content, profile_keywords)
         
-        # Find specific matched keywords
-        job_keyword_set = set(job_keywords)
-        profile_keyword_set = set(profile_keywords)
-        matched_keywords = list(job_keyword_set.intersection(profile_keyword_set))
+        # Find specific matched keywords by checking each profile keyword
+        matched_keywords = []
+        cleaned_job_content = self.clean_text(job_content)
+        
+        for keyword in profile_keywords:
+            cleaned_keyword = self.clean_text(keyword)
+            if cleaned_keyword in cleaned_job_content:
+                matched_keywords.append(keyword)
+            elif len(cleaned_keyword.split()) > 1:
+                keyword_words = cleaned_keyword.split()
+                if all(word in cleaned_job_content for word in keyword_words):
+                    matched_keywords.append(keyword)
         
         return {
             'profile_name': profile_name,
