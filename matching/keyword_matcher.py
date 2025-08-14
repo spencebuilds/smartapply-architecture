@@ -133,7 +133,9 @@ class KeywordMatcher:
             'recommendation': self._generate_recommendation(best_match)
         }
         
-        self.logger.debug(f"Job {job['id']} best match: {best_match['profile_name']} ({best_match['match_score']}%)")
+        self.logger.info(f"Job {job['id']} best match: {best_match['profile_name']} ({best_match['match_score']}%)")
+        if best_match['match_score'] > 0:
+            self.logger.info(f"Matched keywords: {best_match['matched_keywords'][:5]}")
         
         return result
     
