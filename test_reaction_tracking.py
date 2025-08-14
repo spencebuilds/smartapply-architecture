@@ -12,13 +12,22 @@ def test_message_parsing():
     logger = setup_logger()
     handler = SlackEventHandler()
     
-    # Sample formatted message (like our new format)
+    # Sample formatted message (new template format)
     sample_message = {
-        'text': '''🚀 **HOT MATCH: 94%**  
-🏢 Palantir | 🧠 Staff Product Manager - Platform Infrastructure  
-📍 Washington, D.C. | 🧬 Resume A | ⏰ Today  
-🧩 Matched: platform, kubernetes, infrastructure  
-🔗 <https://jobs.lever.co/palantir/test-staff-pm|Apply Now>'''
+        'text': '''🎯 New Job Match – 94% Match
+
+**Title:** Staff Product Manager - Platform Infrastructure  
+**Company:** Palantir  
+**Location:** Washington, D.C.  
+**Posted:** Today  
+**Source:** Lever
+
+**Match Score:** 94%  
+**Recommended Resume:** Resume A - Platform Infrastructure  
+**Matched Keywords:** platform, kubernetes, infrastructure
+
+🔗 **Apply Now:** <https://jobs.lever.co/palantir/test-staff-pm>  
+✅ React with ✅ after applying to log it in Airtable.'''
     }
     
     # Test extraction

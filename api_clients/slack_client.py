@@ -20,49 +20,46 @@ class SlackClient:
         self.client = WebClient(token=self.config.SLACK_BOT_TOKEN)
     
     def format_job_message(self, job: Dict[str, Any]) -> str:
-        """Format job information into a visually appealing Slack message."""
+        """Format job information using the new template format."""
         match_result = job.get('match_result', {})
         best_resume = match_result.get('best_resume', 'Unknown')
         match_score = match_result.get('best_match_score', 0)
         matched_keywords = match_result.get('best_matched_keywords', [])
         
-        # Get match emoji based on score
-        if match_score >= 95:
-            match_emoji = "🔥"
-            match_label = "PERFECT MATCH"
-        elif match_score >= 90:
-            match_emoji = "🚀"
-            match_label = "HOT MATCH"
-        elif match_score >= 85:
-            match_emoji = "⭐"
-            match_label = "GREAT MATCH"
-        else:
-            match_emoji = "✅"
-            match_label = "GOOD MATCH"
-        
-        # Format resume letter (A, B, C)
-        resume_letter = "Unknown"
+        # Format resume display name
+        resume_display = "Unknown"
         if "Resume_A" in best_resume:
-            resume_letter = "Resume A"
+            resume_display = "Resume A - Platform Infrastructure"
         elif "Resume_B" in best_resume:
-            resume_letter = "Resume B"
+            resume_display = "Resume B - Developer Tools & Observability"
         elif "Resume_C" in best_resume:
-            resume_letter = "Resume C"
+            resume_display = "Resume C - Billing & Revenue Platform"
         
-        # Get top 3 matched keywords
-        top_keywords = matched_keywords[:3]
-        keywords_display = ", ".join(top_keywords) if top_keywords else "None"
-        
-        # Try to determine job age if available
+        # Get job age if available
         job_age = self._get_job_age(job)
-        age_display = f" | ⏰ {job_age}" if job_age else ""
+        time_posted = job_age if job_age else "Recently"
         
-        # Build the formatted message
-        message = f"""{match_emoji} **{match_label}: {match_score}%**  
-🏢 {job['company']} | 🧠 {job['title']}  
-📍 {job.get('location', 'Remote/Not specified')} | 🧬 {resume_letter}{age_display}  
-🧩 Matched: {keywords_display}  
-🔗 <{job.get('url', '#')}|Apply Now>"""
+        # Determine source from job data
+        source = job.get('source', 'Unknown').title()
+        
+        # Format matched keywords
+        keywords_text = ', '.join(matched_keywords) if matched_keywords else 'None'
+        
+        # Build message using the new template
+        message = f"""🎯 New Job Match – {match_score}% Match
+
+**Title:** {job['title']}  
+**Company:** {job['company']}  
+**Location:** {job.get('location', 'Not specified')}  
+**Posted:** {time_posted}  
+**Source:** {source}
+
+**Match Score:** {match_score}%  
+**Recommended Resume:** {resume_display}  
+**Matched Keywords:** {keywords_text}
+
+🔗 **Apply Now:** <{job.get('url', '#')}>  
+✅ React with ✅ after applying to log it in Airtable."""
         
         return message
     

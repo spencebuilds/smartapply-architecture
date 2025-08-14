@@ -91,23 +91,29 @@ class SlackEventHandler:
         try:
             text = message_data.get('text', '')
             
-            # Parse the formatted message using regex patterns
-            # Expected format:
-            # 🚀 **HOT MATCH: 91%**  
-            # 🏢 Company | 🧠 Job Title  
-            # 📍 Location | 🧬 Resume A | ⏰ Age  
-            # 🧩 Matched: keyword1, keyword2, keyword3  
-            # 🔗 <url|Apply Now>
+            # Parse the new message format:
+            # 🎯 New Job Match – 94% Match
+            # **Title:** Staff Product Manager - Platform Infrastructure  
+            # **Company:** Palantir  
+            # **Location:** Washington, D.C.  
+            # **Posted:** Today  
+            # **Source:** Lever
+            # **Match Score:** 94%  
+            # **Recommended Resume:** Resume A - Platform Infrastructure  
+            # **Matched Keywords:** platform, kubernetes, infrastructure
+            # 🔗 **Apply Now:** <url>  
+            # ✅ React with ✅ after applying to log it in Airtable.
             
             patterns = {
-                'match_score': r'(\d+)%\*\*',
-                'company': r'🏢 ([^|]+) \|',
-                'title': r'🧠 ([^\n]+)',
-                'location': r'📍 ([^|]+) \|',
-                'resume': r'🧬 (Resume [ABC])',
-                'job_age': r'⏰ ([^|\n]+)',
-                'keywords': r'🧩 Matched: ([^\n]+)',
-                'url': r'🔗 <([^|>]+)'
+                'match_score': r'New Job Match – (\d+)% Match',
+                'title': r'\*\*Title:\*\* ([^\n]+)',
+                'company': r'\*\*Company:\*\* ([^\n]+)',
+                'location': r'\*\*Location:\*\* ([^\n]+)',
+                'posted': r'\*\*Posted:\*\* ([^\n]+)',
+                'source': r'\*\*Source:\*\* ([^\n]+)',
+                'resume': r'\*\*Recommended Resume:\*\* ([^\n]+)',
+                'keywords': r'\*\*Matched Keywords:\*\* ([^\n]+)',
+                'url': r'🔗 \*\*Apply Now:\*\* <([^>]+)>'
             }
             
             job_info = {}
@@ -121,6 +127,7 @@ class SlackEventHandler:
             required_fields = ['company', 'title', 'match_score', 'url']
             if not all(field in job_info for field in required_fields):
                 self.logger.warning(f"Missing required fields in job info: {job_info}")
+                self.logger.debug(f"Message text: {text}")
                 return None
             
             # Convert match score to float
@@ -132,8 +139,9 @@ class SlackEventHandler:
             # Set defaults for optional fields
             job_info.setdefault('location', 'Not specified')
             job_info.setdefault('resume', 'Unknown')
-            job_info.setdefault('job_age', 'Unknown')
+            job_info.setdefault('posted', 'Unknown')
             job_info.setdefault('keywords', 'None')
+            job_info.setdefault('source', 'Unknown')
             
             return job_info
             
