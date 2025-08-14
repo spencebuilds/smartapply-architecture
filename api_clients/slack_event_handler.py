@@ -185,19 +185,15 @@ class SlackEventHandler:
                 self.logger.info(f"Application already logged for URL: {job_info['url']}")
                 return True
             
-            # Prepare Airtable record
+            # Prepare Airtable record matching the actual table fields
             record_data = {
-                'Company': job_info['company'],
-                'Title': job_info['title'],
-                'Applied Date': datetime.utcnow().isoformat(),
-                'Resume Used': job_info['resume'],
-                'Match Score': job_info['match_score'],
-                'Job Link': job_info['url'],
-                'Source': self._determine_source(job_info['url']),
+                'Role Title': job_info['title'],
+                'Job Posting URL': job_info['url'],
+                'Application Date': datetime.utcnow().strftime('%Y-%m-%d'),
+                'Resume Match Score': job_info['match_score'],
                 'Status': 'Applied',
-                'Location': job_info['location'],
-                'Keywords': job_info['keywords'],
-                'User ID': user_id
+                'Manual/Auto Logged': 'Auto',
+                'Notes': f"Auto-logged via Slack reaction. Match: {job_info['match_score']}%. Keywords: {job_info['keywords']}"
             }
             
             # Store in Airtable

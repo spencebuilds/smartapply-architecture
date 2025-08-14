@@ -181,7 +181,7 @@ class AirtableClient:
         """Check if an application with this job URL already exists in Airtable."""
         try:
             params = {
-                "filterByFormula": f"{{Job Link}} = '{job_url}'"
+                "filterByFormula": f"{{Job Posting URL}} = '{job_url}'"
             }
             
             response = requests.get(
