@@ -136,15 +136,26 @@ class SlackEventHandler:
             # Validate required fields
             required_fields = ['company', 'title', 'match_score', 'url']
             if not all(field in job_info for field in required_fields):
-                self.logger.warning(f"Missing required fields in job info: {job_info}")
-                self.logger.warning(f"Message text preview: {text[:200]}...")
+                self.logger.info(f"Missing required fields in job info: {job_info}")
+                self.logger.info(f"Full message text: {repr(text)}")
                 # Log which patterns matched for debugging
                 for key, pattern in patterns.items():
                     match = re.search(pattern, text)
                     if match:
                         self.logger.info(f"Pattern '{key}' matched: {match.group(1)}")
                     else:
-                        self.logger.warning(f"Pattern '{key}' failed to match")
+                        self.logger.info(f"Pattern '{key}' failed to match")
+                        # Try alternative patterns for debugging
+                        if key == 'match_score':
+                            alt_match = re.search(r'(\d+\.?\d*)%\s*Match', text, re.IGNORECASE)
+                            if alt_match:
+                                self.logger.info(f"Alternative match_score found: {alt_match.group(0)}")
+                        elif key == 'url':
+                            alt_match = re.search(r'<(https?://[^>]+)>', text)
+                            if alt_match:
+                                self.logger.info(f"Alternative URL found: {alt_match.group(1)}")
+                        
+                self.logger.info("Could not extract job information from message")
                 return None
             
             # Convert match score to float
