@@ -101,17 +101,17 @@ class SlackEventHandler:
         try:
             text = message_data.get('text', '')
             
-            # Parse the Slack formatted message:
-            # 🎯 *New Job Match – 94% Match*
+            # Parse the Slack formatted message with emoji text codes:
+            # :dart: *New Job Match – 94.0% Match*
             # *Title:* Staff Product Manager - Platform Infrastructure  
             # *Company:* Palantir  
             # *Location:* Washington, D.C.  
             # *Posted:* Today  
             # *Source:* Lever
-            # *Match Score:* 94%  
+            # *Match Score:* 94.0%  
             # *Recommended Resume:* Resume A - Platform Infrastructure  
             # *Matched Keywords:* platform, kubernetes, infrastructure
-            # 🔗 *Apply Now:* <url>  
+            # :link: *Apply Now:* <url>  
             # ✅ React with ✅ after applying to log it in Airtable.
             
             patterns = {
@@ -123,7 +123,7 @@ class SlackEventHandler:
                 'source': r'\*Source:\* ([^\n]+)',
                 'resume': r'\*Recommended Resume:\* ([^\n]+)',
                 'keywords': r'\*Matched Keywords:\* ([^\n]+)',
-                'url': r'🔗 \*Apply Now:\* <([^>|]+)'
+                'url': r':link: \*Apply Now:\* <([^>]+)>'
             }
             
             job_info = {}
