@@ -10,21 +10,22 @@ def send_test_pm_job():
     """Send a test Product Manager job notification."""
     logger = setup_logger()
     
-    # Create a realistic test PM job
+    # Create a realistic test PM job with new formatting
     test_job = {
-        "id": "test_pm_001",
-        "title": "Senior Product Manager - Billing Platform",
-        "company": "TestCorp",
-        "description": "Lead product strategy for our billing and payments platform, working on pricing models, subscription management, and revenue optimization.",
-        "location": "San Francisco, CA",
+        "id": "test_pm_002",
+        "title": "Staff Product Manager - Platform Infrastructure",
+        "company": "Palantir",
+        "description": "Lead product strategy for our platform infrastructure, working on Kubernetes, microservices, and scalable architecture.",
+        "location": "Washington, D.C.",
         "department": "Product",
-        "url": "https://example.com/jobs/test-pm",
-        "source": "test",
+        "url": "https://jobs.lever.co/palantir/test-staff-pm",
+        "source": "lever",
+        "posted_date": "2025-08-14",
         "match_result": {
-            "best_resume": "Resume_C_Billing_Revenue_Platform",
-            "best_match_score": 92.0,
-            "best_matched_keywords": ["billing", "pricing", "payments", "revenue", "subscription"],
-            "recommendation": "Excellent match for billing platform PM role"
+            "best_resume": "Resume_A_Platform_Infrastructure",
+            "best_match_score": 94.0,
+            "best_matched_keywords": ["platform", "kubernetes", "infrastructure", "microservices", "scalable", "architecture"],
+            "recommendation": "Perfect match for platform infrastructure PM role"
         }
     }
     

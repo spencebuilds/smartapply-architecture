@@ -3,7 +3,8 @@ Slack API client for sending job notifications.
 """
 
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+from datetime import datetime, timedelta
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from config import Config
@@ -19,30 +20,100 @@ class SlackClient:
         self.client = WebClient(token=self.config.SLACK_BOT_TOKEN)
     
     def format_job_message(self, job: Dict[str, Any]) -> str:
-        """Format job information into a Slack message."""
+        """Format job information into a visually appealing Slack message."""
         match_result = job.get('match_result', {})
         best_resume = match_result.get('best_resume', 'Unknown')
         match_score = match_result.get('best_match_score', 0)
         matched_keywords = match_result.get('best_matched_keywords', [])
         
-        # Format resume name for display
-        resume_display = best_resume.replace('_', ' ').replace('Resume ', 'Resume ')
+        # Get match emoji based on score
+        if match_score >= 95:
+            match_emoji = "🔥"
+            match_label = "PERFECT MATCH"
+        elif match_score >= 90:
+            match_emoji = "🚀"
+            match_label = "HOT MATCH"
+        elif match_score >= 85:
+            match_emoji = "⭐"
+            match_label = "GREAT MATCH"
+        else:
+            match_emoji = "✅"
+            match_label = "GOOD MATCH"
         
-        message = f"""🎯 *Job Match Found - {match_score}% Match*
-
-*Company:* {job['company']}
-*Title:* {job['title']}
-*Match Percentage:* {match_score}%
-*Recommended Resume:* {resume_display}
-
-*Matched Keywords:* {', '.join(matched_keywords[:8])}{'...' if len(matched_keywords) > 8 else ''}
-
-*Apply Here:* {job.get('url', 'URL not available')}
-
-*Location:* {job.get('location', 'Not specified')}
-*Source:* {job.get('source', 'Unknown').title()}
-"""
+        # Format resume letter (A, B, C)
+        resume_letter = "Unknown"
+        if "Resume_A" in best_resume:
+            resume_letter = "Resume A"
+        elif "Resume_B" in best_resume:
+            resume_letter = "Resume B"
+        elif "Resume_C" in best_resume:
+            resume_letter = "Resume C"
+        
+        # Get top 3 matched keywords
+        top_keywords = matched_keywords[:3]
+        keywords_display = ", ".join(top_keywords) if top_keywords else "None"
+        
+        # Try to determine job age if available
+        job_age = self._get_job_age(job)
+        age_display = f" | ⏰ {job_age}" if job_age else ""
+        
+        # Build the formatted message
+        message = f"""{match_emoji} **{match_label}: {match_score}%**  
+🏢 {job['company']} | 🧠 {job['title']}  
+📍 {job.get('location', 'Remote/Not specified')} | 🧬 {resume_letter}{age_display}  
+🧩 Matched: {keywords_display}  
+🔗 <{job.get('url', '#')}|Apply Now>"""
+        
         return message
+    
+    def _get_job_age(self, job: Dict[str, Any]) -> Optional[str]:
+        """Determine job posting age from available data."""
+        # Try to extract date from various possible fields
+        date_fields = ['posted_date', 'created_at', 'date_posted', 'published_at']
+        
+        for field in date_fields:
+            if field in job and job[field]:
+                try:
+                    # Handle different date formats
+                    job_date_str = job[field]
+                    
+                    # Common date formats to try
+                    date_formats = [
+                        '%Y-%m-%d',
+                        '%Y-%m-%dT%H:%M:%S',
+                        '%Y-%m-%dT%H:%M:%SZ',
+                        '%Y-%m-%dT%H:%M:%S.%fZ',
+                        '%m/%d/%Y',
+                        '%d/%m/%Y'
+                    ]
+                    
+                    job_date = None
+                    for fmt in date_formats:
+                        try:
+                            job_date = datetime.strptime(job_date_str.split('T')[0] if 'T' in job_date_str else job_date_str, fmt.split('T')[0] if 'T' in fmt else fmt)
+                            break
+                        except ValueError:
+                            continue
+                    
+                    if job_date:
+                        days_ago = (datetime.now() - job_date).days
+                        
+                        if days_ago == 0:
+                            return "Today"
+                        elif days_ago == 1:
+                            return "1 day ago"
+                        elif days_ago <= 7:
+                            return f"{days_ago} days ago"
+                        elif days_ago <= 30:
+                            weeks = days_ago // 7
+                            return f"{weeks} week{'s' if weeks > 1 else ''} ago"
+                        else:
+                            return "30+ days ago"
+                            
+                except (ValueError, TypeError):
+                    continue
+        
+        return None
     
     def send_job_notification(self, job: Dict[str, Any]) -> bool:
         """Send a job notification to the configured Slack channel."""
