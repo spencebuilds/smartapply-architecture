@@ -45,20 +45,20 @@ class SlackClient:
         # Format matched keywords
         keywords_text = ', '.join(matched_keywords) if matched_keywords else 'None'
         
-        # Build message using the new template
-        message = f"""🎯 New Job Match – {match_score}% Match
+        # Build message using proper Slack formatting
+        message = f"""🎯 *New Job Match – {match_score}% Match*
 
-**Title:** {job['title']}  
-**Company:** {job['company']}  
-**Location:** {job.get('location', 'Not specified')}  
-**Posted:** {time_posted}  
-**Source:** {source}
+*Title:* {job['title']}  
+*Company:* {job['company']}  
+*Location:* {job.get('location', 'Not specified')}  
+*Posted:* {time_posted}  
+*Source:* {source}
 
-**Match Score:** {match_score}%  
-**Recommended Resume:** {resume_display}  
-**Matched Keywords:** {keywords_text}
+*Match Score:* {match_score}%  
+*Recommended Resume:* {resume_display}  
+*Matched Keywords:* {keywords_text}
 
-🔗 **Apply Now:** <{job.get('url', '#')}>  
+🔗 *Apply Now:* <{job.get('url', '#')}>  
 ✅ React with ✅ after applying to log it in Airtable."""
         
         return message

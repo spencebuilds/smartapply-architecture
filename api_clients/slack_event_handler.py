@@ -91,29 +91,29 @@ class SlackEventHandler:
         try:
             text = message_data.get('text', '')
             
-            # Parse the new message format:
-            # 🎯 New Job Match – 94% Match
-            # **Title:** Staff Product Manager - Platform Infrastructure  
-            # **Company:** Palantir  
-            # **Location:** Washington, D.C.  
-            # **Posted:** Today  
-            # **Source:** Lever
-            # **Match Score:** 94%  
-            # **Recommended Resume:** Resume A - Platform Infrastructure  
-            # **Matched Keywords:** platform, kubernetes, infrastructure
-            # 🔗 **Apply Now:** <url>  
+            # Parse the Slack formatted message:
+            # 🎯 *New Job Match – 94% Match*
+            # *Title:* Staff Product Manager - Platform Infrastructure  
+            # *Company:* Palantir  
+            # *Location:* Washington, D.C.  
+            # *Posted:* Today  
+            # *Source:* Lever
+            # *Match Score:* 94%  
+            # *Recommended Resume:* Resume A - Platform Infrastructure  
+            # *Matched Keywords:* platform, kubernetes, infrastructure
+            # 🔗 *Apply Now:* <url>  
             # ✅ React with ✅ after applying to log it in Airtable.
             
             patterns = {
                 'match_score': r'New Job Match – (\d+)% Match',
-                'title': r'\*\*Title:\*\* ([^\n]+)',
-                'company': r'\*\*Company:\*\* ([^\n]+)',
-                'location': r'\*\*Location:\*\* ([^\n]+)',
-                'posted': r'\*\*Posted:\*\* ([^\n]+)',
-                'source': r'\*\*Source:\*\* ([^\n]+)',
-                'resume': r'\*\*Recommended Resume:\*\* ([^\n]+)',
-                'keywords': r'\*\*Matched Keywords:\*\* ([^\n]+)',
-                'url': r'🔗 \*\*Apply Now:\*\* <([^>]+)>'
+                'title': r'\*Title:\* ([^\n]+)',
+                'company': r'\*Company:\* ([^\n]+)',
+                'location': r'\*Location:\* ([^\n]+)',
+                'posted': r'\*Posted:\* ([^\n]+)',
+                'source': r'\*Source:\* ([^\n]+)',
+                'resume': r'\*Recommended Resume:\* ([^\n]+)',
+                'keywords': r'\*Matched Keywords:\* ([^\n]+)',
+                'url': r'🔗 \*Apply Now:\* <([^>]+)>'
             }
             
             job_info = {}
