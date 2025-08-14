@@ -8,20 +8,30 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (August 14, 2025)
 
-## Removed Company Filtering - All Jobs Approach
-- System now fetches ALL available jobs from Lever and Greenhouse APIs
-- Removed TARGET_COMPANIES restriction - no more company-specific filtering
-- Updated API URLs: Lever with ?mode=json, Greenhouse with boards-api endpoint
-- Expanded company list to ~40 companies across both platforms
-- Job filtering now ONLY based on keyword matching (≥80% threshold)
-- Expected significantly higher job volume for matching
+## Product Manager Focus & Enhanced Notifications
+- System now filters exclusively for Product Manager roles (PM, Product Lead, Product Owner, etc.)
+- Implemented 80% match threshold enforcement with complete suppression of lower scores
+- Enhanced Slack notification formatting with emojis and visual appeal:
+  - 🚀 HOT MATCH, ⭐ GREAT MATCH, ✅ GOOD MATCH based on score tiers
+  - Shows only top 3 matched keywords for cleaner display
+  - Includes job posting age when available (Today, 2 days ago, etc.)
+  - Compact 4-line format with company, title, location, resume, and apply link
+
+## React-to-Track Feature Implementation
+- Added Slack Events API integration for ✅ reaction tracking
+- When users react with ✅ to job notifications, automatically logs to Airtable:
+  - Extracts job metadata from formatted Slack message
+  - Creates Airtable record with Applied status and current timestamp
+  - Prevents duplicates using job URL as deduplication key
+  - Adds ✔️ confirmation reaction to show successful logging
+- Flask server running on port 5000 to handle Slack webhook events
+- Complete message parsing system for job data extraction
 
 ## Updated Resume Keyword Sets
 - Resume A: Platform Infrastructure (14 keywords)
 - Resume B: Developer Tools & Observability (12 keywords)  
 - Resume C: Billing & Revenue Platform (12 keywords)
 - Improved keyword matching algorithm for better phrase detection
-- Enhanced Slack notification format with match percentage and keywords
 
 # System Architecture
 

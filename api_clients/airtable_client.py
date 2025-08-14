@@ -146,3 +146,56 @@ class AirtableClient:
         except Exception as e:
             self.logger.error(f"Error updating job status in Airtable: {str(e)}")
             return False
+    
+    def store_application(self, application_data: Dict[str, Any]) -> bool:
+        """Store job application record in Airtable."""
+        try:
+            record = {
+                "fields": application_data
+            }
+            
+            response = requests.post(
+                self.base_url,
+                json=record,
+                headers=self.headers,
+                timeout=30
+            )
+            
+            response.raise_for_status()
+            
+            if response.status_code == 200:
+                self.logger.info(f"Successfully stored application in Airtable: {application_data.get('Company')} - {application_data.get('Title')}")
+                return True
+            else:
+                self.logger.error(f"Failed to store application in Airtable: {response.status_code}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Error storing application in Airtable: {str(e)}")
+            return False
+        except Exception as e:
+            self.logger.error(f"Unexpected error storing application in Airtable: {str(e)}")
+            return False
+    
+    def check_application_exists(self, job_url: str) -> bool:
+        """Check if an application with this job URL already exists in Airtable."""
+        try:
+            params = {
+                "filterByFormula": f"{{Job Link}} = '{job_url}'"
+            }
+            
+            response = requests.get(
+                self.base_url,
+                params=params,
+                headers=self.headers,
+                timeout=30
+            )
+            
+            response.raise_for_status()
+            data = response.json()
+            
+            return len(data.get("records", [])) > 0
+            
+        except Exception as e:
+            self.logger.error(f"Error checking application existence in Airtable: {str(e)}")
+            return False
