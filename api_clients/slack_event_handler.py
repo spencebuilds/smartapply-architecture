@@ -127,7 +127,14 @@ class SlackEventHandler:
             required_fields = ['company', 'title', 'match_score', 'url']
             if not all(field in job_info for field in required_fields):
                 self.logger.warning(f"Missing required fields in job info: {job_info}")
-                self.logger.debug(f"Message text: {text}")
+                self.logger.warning(f"Message text preview: {text[:200]}...")
+                # Log which patterns matched for debugging
+                for key, pattern in patterns.items():
+                    match = re.search(pattern, text)
+                    if match:
+                        self.logger.info(f"Pattern '{key}' matched: {match.group(1)}")
+                    else:
+                        self.logger.warning(f"Pattern '{key}' failed to match")
                 return None
             
             # Convert match score to float
