@@ -19,7 +19,7 @@ class Config:
         self.SLACK_CHANNEL_ID = os.getenv("SLACK_CHANNEL_ID", "")
         self.AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY", "")
         self.AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID", "")
-        self.AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME", "Job Applications")
+        self.AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME", "Applications")
         
         # Job Matching Configuration - back to 80% for PM roles
         self.MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD", "80.0"))
