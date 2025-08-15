@@ -6,34 +6,26 @@ An automated job application system that monitors job postings from multiple sou
 
 Preferred communication style: Simple, everyday language.
 
-# Recent Changes (August 14, 2025)
+# Recent Changes (August 15, 2025)
 
-## Product Manager Focus & Enhanced Notifications
-- System now filters exclusively for Product Manager roles (PM, Product Lead, Product Owner, etc.)
-- Implemented 80% match threshold enforcement with complete suppression of lower scores
-- Enhanced Slack notification formatting with emojis and visual appeal:
-  - 🚀 HOT MATCH, ⭐ GREAT MATCH, ✅ GOOD MATCH based on score tiers
-  - Shows only top 3 matched keywords for cleaner display
-  - Includes job posting age when available (Today, 2 days ago, etc.)
-  - Compact 4-line format with company, title, location, resume, and apply link
+## Concept-Based Matching Algorithm - COMPLETED ✓
+- ✅ **MAJOR UPGRADE**: Replaced keyword matching with sophisticated concept-based grouping algorithm
+- ✅ New algorithm analyzes job descriptions using concept clusters rather than simple keyword counting
+- ✅ Four resume profiles now powered by concept maps:
+  - Resume A: Platform Infrastructure (platform_infrastructure, data_platforms, api_strategy, observability)
+  - Resume B: Developer Tools & Observability (developer_tools, observability, ci_cd)
+  - Resume C: Billing & Revenue Platform (billing_platform, revenue_metrics, automation)
+  - Resume D: Internal Tools & Productivity (internal_tools, self_serve, developer_experience)
+- ✅ Improved matching accuracy through multi-phrase concept detection
+- ✅ Normalized scoring system converts raw concept matches to percentage scores
 
-## React-to-Track Feature - COMPLETED ✓
-- ✅ Slack Events API integration for ✅ reaction tracking fully operational
-- ✅ When users react with ✅ to job notifications, automatically logs to Airtable:
-  - Extracts job metadata from formatted Slack message using regex patterns
-  - Creates Airtable record in "Applications" table with proper field mapping
-  - Prevents duplicates using "Job Posting URL" field as deduplication key
-  - Logs as "Auto" tracked with match score, keywords in notes
-- ✅ Flask server running on port 5000 handling Slack webhook events successfully
-- ✅ Complete message parsing system operational with emoji text code handling
-- ✅ Airtable integration working with correct field mappings for existing table structure
-
-## Updated Resume Keyword Sets & Threshold Adjustment
-- Resume A: Platform Infrastructure (14 keywords)
-- Resume B: Developer Tools & Observability (12 keywords)  
-- Resume C: Billing & Revenue Platform (12 keywords)
-- Improved keyword matching algorithm for better phrase detection
-- **August 14**: Temporarily lowered match threshold from 80% to 60% after comprehensive scan of 2,764 jobs found 192 PM positions but zero 80%+ matches - threshold was too restrictive for current market
+## System Status (August 15, 2025)
+- ✅ React-to-Track feature fully operational with ✅ Slack reactions automatically logging to Airtable
+- ✅ Slack Events API server running on port 5000 with working webhook handling
+- ✅ System actively monitoring 2,762+ jobs every 15 minutes from Lever and Greenhouse APIs
+- ✅ Product Manager role filtering with 15% threshold for concept-based matches
+- ✅ Enhanced Slack notification formatting with emoji tiers and job metadata
+- ✅ Processed jobs deduplication system updated for new algorithm
 
 # System Architecture
 

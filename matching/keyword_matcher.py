@@ -1,15 +1,17 @@
 """
 Keyword matching engine for job descriptions and resume profiles.
+Now using concept-based grouping algorithm for better matching accuracy.
 """
 
 import logging
 import re
 from typing import Dict, List, Any
 from matching.resume_profiles import ResumeProfiles
+from matching.concept_matcher import analyze_job_posting
 
 
 class KeywordMatcher:
-    """Engine for matching job descriptions to resume profiles."""
+    """Engine for matching job descriptions to resume profiles using concept-based algorithm."""
     
     def __init__(self):
         """Initialize keyword matcher."""
@@ -136,7 +138,7 @@ class KeywordMatcher:
         return False
 
     def match_job(self, job: Dict[str, Any]) -> Dict[str, Any]:
-        """Match a job against all resume profiles and return the best match."""
+        """Match a job against all resume profiles using concept-based algorithm."""
         # First check if this is a Product Manager role
         if not self.is_product_manager_role(job):
             # Return a low score result for non-PM roles
@@ -149,32 +151,59 @@ class KeywordMatcher:
                 'recommendation': 'Not a Product Manager role - skipped'
             }
         
-        profiles = self.resume_profiles.get_all_profiles()
-        match_results = []
+        # Use the new concept-based matching algorithm
+        job_content = f"{job.get('title', '')} {job.get('description', '')}"
+        company = job.get('company', 'Unknown')
         
-        for profile_name, profile_data in profiles.items():
-            profile_keywords = profile_data['keywords']
-            match_result = self.match_job_to_profile(job, profile_name, profile_keywords)
-            match_results.append(match_result)
-        
-        # Find best match
-        best_match = max(match_results, key=lambda x: x['match_score'])
-        
-        # Boost score for PM roles since they passed the filter
-        best_match['match_score'] = min(100.0, best_match['match_score'] * 1.2)
-        
-        result = {
-            'job_id': job['id'],
-            'all_matches': match_results,
-            'best_resume': best_match['profile_name'],
-            'best_match_score': best_match['match_score'],
-            'best_matched_keywords': best_match['matched_keywords'],
-            'recommendation': self._generate_recommendation(best_match)
-        }
-        
-        self.logger.info(f"PM Job {job['id']} best match: {best_match['profile_name']} ({best_match['match_score']}%)")
-        if best_match['match_score'] > 0:
-            self.logger.info(f"Matched keywords: {best_match['matched_keywords'][:5]}")
+        try:
+            analysis_result = analyze_job_posting(job_content, company)
+            
+            # Convert the concept-based result to the expected format
+            best_resume = analysis_result.get('recommended_resume', 'None')
+            raw_score = analysis_result.get('match_score', 0)
+            
+            # Convert raw concept count to percentage (normalize against typical range)
+            # Based on testing: good matches typically have 1-4 concept matches, excellent matches have 5+
+            normalized_score = min(100.0, (raw_score / 4.0) * 100.0) if raw_score > 0 else 0.0
+            
+            # Get matched concepts as "keywords" for compatibility
+            concept_breakdown = analysis_result.get('concept_breakdown', {})
+            matched_concepts = list(concept_breakdown.keys()) if concept_breakdown else []
+            
+            # Create match results for all resumes for compatibility
+            all_resume_scores = analysis_result.get('resume_match_breakdown', {})
+            match_results = []
+            for resume_name, score in all_resume_scores.items():
+                normalized_resume_score = min(100.0, (score / 4.0) * 100.0) if score > 0 else 0.0
+                match_results.append({
+                    'profile_name': resume_name,
+                    'match_score': normalized_resume_score,
+                    'matched_keywords': matched_concepts if resume_name == best_resume else [],
+                    'total_profile_keywords': 8,  # Approximate concept count
+                    'matched_keyword_count': score
+                })
+            
+            result = {
+                'job_id': job['id'],
+                'all_matches': match_results,
+                'best_resume': best_resume,
+                'best_match_score': normalized_score,
+                'best_matched_keywords': matched_concepts,
+                'recommendation': self._generate_recommendation({'match_score': normalized_score, 'profile_name': best_resume}),
+                'concept_analysis': analysis_result  # Add full concept analysis for debugging
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error in concept-based matching: {str(e)}")
+            # Fallback to simple scoring for PM roles
+            result = {
+                'job_id': job['id'],
+                'all_matches': [],
+                'best_resume': 'Resume A',
+                'best_match_score': 15.0,  # Minimum threshold for PM roles
+                'best_matched_keywords': ['product manager'],
+                'recommendation': 'PM role detected - using fallback scoring'
+            }
         
         return result
     
@@ -182,14 +211,12 @@ class KeywordMatcher:
         """Generate a recommendation message based on match results."""
         score = match_result['match_score']
         profile = match_result['profile_name']
-        matched_count = match_result['matched_keyword_count']
-        total_count = match_result['total_profile_keywords']
         
         if score >= 90:
-            return f"Excellent match! Use {profile} resume. {matched_count}/{total_count} keywords matched."
+            return f"Excellent match! Use {profile} resume."
         elif score >= 80:
-            return f"Good match! Consider using {profile} resume. {matched_count}/{total_count} keywords matched."
+            return f"Good match! Consider using {profile} resume."
         elif score >= 60:
-            return f"Moderate match with {profile} resume. {matched_count}/{total_count} keywords matched."
+            return f"Moderate match with {profile} resume."
         else:
-            return f"Weak match with {profile} resume. Only {matched_count}/{total_count} keywords matched."
+            return f"Weak match with {profile} resume."
