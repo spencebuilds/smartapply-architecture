@@ -62,17 +62,34 @@ class LeverClient:
             self.logger.error(f"Unexpected error fetching Lever jobs for {company}: {str(e)}")
             return []
     
-    def fetch_all_jobs(self) -> List[Dict[str, Any]]:
+    def fetch_all_jobs(self, use_supabase: bool = True) -> List[Dict[str, Any]]:
         """Fetch all available job postings from Lever."""
-        # Common company identifiers that use Lever
-        companies = [
-            "stripe", "github", "shopify", "airbnb", "uber", "netflix", "spotify", 
-            "coinbase", "twitch", "squareup", "segment", "lever", "brex", "notion",
-            "rippling", "zapier", "figma", "discord", "robinhood", "plaid", "zoom",
-            "asana", "dropbox", "pinterest", "palantir", "checkr", "gusto", "retool",
-            "mixpanel", "amplitude", "segment", "buildkite", "apollo", "lattice",
-            "workato", "greenhouse", "airtable", "loom", "linear", "superhuman"
-        ]
+        companies = []
+        
+        if use_supabase:
+            try:
+                from api_clients.supabase_client import SupabaseClient
+                supabase_client = SupabaseClient()
+                supabase_companies = supabase_client.get_company_names_for_job_fetching()
+                if supabase_companies:
+                    companies = supabase_companies
+                    self.logger.info(f"Using {len(companies)} companies from Supabase")
+                else:
+                    self.logger.warning("No companies found in Supabase, falling back to hardcoded list")
+            except Exception as e:
+                self.logger.warning(f"Error fetching companies from Supabase: {str(e)}, using fallback list")
+        
+        # Fallback to hardcoded list if Supabase is not available or empty
+        if not companies:
+            companies = [
+                "stripe", "github", "shopify", "airbnb", "uber", "netflix", "spotify", 
+                "coinbase", "twitch", "squareup", "segment", "lever", "brex", "notion",
+                "rippling", "zapier", "figma", "discord", "robinhood", "plaid", "zoom",
+                "asana", "dropbox", "pinterest", "palantir", "checkr", "gusto", "retool",
+                "mixpanel", "amplitude", "segment", "buildkite", "apollo", "lattice",
+                "workato", "greenhouse", "airtable", "loom", "linear", "superhuman"
+            ]
+            self.logger.info("Using hardcoded company list")
         
         all_jobs = []
         for company in companies:

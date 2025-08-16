@@ -10,4 +10,5 @@ dependencies = [
     "requests>=2.32.4",
     "schedule>=1.2.2",
     "slack-sdk>=3.36.0",
+    "supabase>=2.18.1",
 ]

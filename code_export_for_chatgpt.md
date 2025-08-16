@@ -10,6 +10,7 @@ An automated job application system that:
 - Sends Slack notifications for qualifying Product Manager matches
 - Enables one-click application tracking via ✅ Slack reactions
 - Automatically logs applications to Airtable
+- **NEW**: Integrated with Supabase for dynamic company management and categorization
 
 ## Key Features
 
@@ -18,6 +19,8 @@ An automated job application system that:
 - **Multi-Source Aggregation**: Fetches from both Lever and Greenhouse job boards
 - **Deduplication System**: Prevents reprocessing of previously seen jobs
 - **15% Match Threshold**: Optimized to capture relevant PM opportunities
+- **Supabase Integration**: Dynamic company management with worldview tags and language patterns
+- **Fallback System**: Maintains reliability with hardcoded company lists if database unavailable
 
 ## File Structure & Code
 
