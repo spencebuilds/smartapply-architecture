@@ -20,41 +20,61 @@ class LeverClient:
     def fetch_jobs_for_company(self, company: str) -> List[Dict[str, Any]]:
         """Fetch job postings for a specific company from Lever."""
         try:
-            url = f"{self.base_url}/postings/{company}?mode=json"
-            headers = {}
+            # Try the standard API endpoint first
+            url = f"{self.base_url}/postings/{company}"
+            headers = {"Accept": "application/json"}
             
             if self.config.LEVER_API_KEY:
                 headers["Authorization"] = f"Basic {self.config.LEVER_API_KEY}"
             
             response = requests.get(url, headers=headers, timeout=30)
-            response.raise_for_status()
             
-            data = response.json()
-            jobs = []
-            
-            # Handle both list and dict responses from Lever API
-            if isinstance(data, list):
-                postings = data
+            # Check if we get a valid response
+            if response.status_code == 200:
+                try:
+                    data = response.json()
+                    
+                    # Handle different response formats
+                    if isinstance(data, list):
+                        postings = data
+                    elif isinstance(data, dict) and "data" in data:
+                        postings = data["data"]
+                    elif isinstance(data, dict) and data.get("ok") == False:
+                        # API returned error response
+                        self.logger.debug(f"Lever API error for {company}: {data.get('error', 'Unknown error')}")
+                        return []
+                    else:
+                        postings = []
+                    
+                    jobs = []
+                    for posting in postings:
+                        # Parse job data with robust field handling
+                        job = {
+                            "id": f"lever_{posting.get('id', company + '_' + str(len(jobs)))}",
+                            "title": posting.get("text", "") or posting.get("title", ""),
+                            "company": company,
+                            "description": posting.get("description", "") or posting.get("descriptionPlain", ""),
+                            "location": self._extract_location(posting),
+                            "department": self._extract_department(posting),
+                            "url": posting.get("hostedUrl", "") or posting.get("applyUrl", ""),
+                            "source": "lever",
+                            "raw_data": posting
+                        }
+                        jobs.append(job)
+                    
+                    if jobs:
+                        self.logger.info(f"Fetched {len(jobs)} jobs from Lever for {company}")
+                    else:
+                        self.logger.debug(f"No jobs found for {company} on Lever")
+                    return jobs
+                    
+                except ValueError as e:
+                    self.logger.debug(f"Invalid JSON response from Lever for {company}: {str(e)}")
+                    return []
             else:
-                postings = data.get("data", [])
-            
-            for posting in postings:
-                job = {
-                    "id": f"lever_{posting['id']}",
-                    "title": posting.get("text", ""),
-                    "company": company,
-                    "description": posting.get("description", ""),
-                    "location": posting.get("categories", {}).get("location", ""),
-                    "department": posting.get("categories", {}).get("department", ""),
-                    "url": posting.get("hostedUrl", ""),
-                    "source": "lever",
-                    "raw_data": posting
-                }
-                jobs.append(job)
-            
-            self.logger.info(f"Fetched {len(jobs)} jobs from Lever for {company}")
-            return jobs
-            
+                self.logger.debug(f"Lever API returned {response.status_code} for {company}")
+                return []
+                
         except requests.exceptions.RequestException as e:
             self.logger.debug(f"No Lever jobs available for {company}: {str(e)}")
             return []
@@ -62,15 +82,35 @@ class LeverClient:
             self.logger.error(f"Unexpected error fetching Lever jobs for {company}: {str(e)}")
             return []
     
+    def _extract_location(self, posting: dict) -> str:
+        """Extract location from Lever posting."""
+        if "categories" in posting and "location" in posting["categories"]:
+            return posting["categories"]["location"]
+        elif "location" in posting:
+            return posting["location"]
+        elif "workplaceType" in posting:
+            return posting["workplaceType"]
+        return ""
+    
+    def _extract_department(self, posting: dict) -> str:
+        """Extract department from Lever posting."""
+        if "categories" in posting and "department" in posting["categories"]:
+            return posting["categories"]["department"]
+        elif "department" in posting:
+            return posting["department"]
+        elif "team" in posting:
+            return posting["team"]
+        return ""
+    
     def discover_active_companies(self) -> List[str]:
         """Discover companies that actually have active job postings on Lever."""
+        # Based on research, most companies have moved away from Lever's public API
+        # or require authentication. Let's test a smaller, focused list.
         candidate_companies = [
-            # Tech companies likely to use Lever
-            "netflix", "uber", "github", "shopify", "slack", "atlassian", "postmates",
-            "flexport", "benchling", "allbirds", "carta", "discord", "figma", "notion", 
-            "linear", "retool", "vercel", "anthropic", "scale", "nuro", "cruise", "waymo",
-            "mongodb", "elastic", "confluent", "snowflake", "datadog", "okta", "crowdstrike",
-            "zscaler", "pagerduty", "newrelic", "splunk", "hashicorp", "gitlab", "docker"
+            # Companies confirmed to use Lever (from investigation)
+            "lever",  # Lever themselves
+            # Potential active users (to test)
+            "benchling", "flexport", "allbirds", "carta", "anthropic", "scale"
         ]
         
         active_companies = []
