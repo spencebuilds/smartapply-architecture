@@ -18,9 +18,10 @@ class GreenhouseClient:
         self.base_url = "https://api.greenhouse.io/v1"
         
     def fetch_jobs_for_company(self, company: str) -> List[Dict[str, Any]]:
-        """Fetch job postings for a specific company from Greenhouse."""
+        """Fetch job postings for a specific company from Greenhouse with content."""
         try:
-            url = f"https://boards-api.greenhouse.io/v1/boards/{company}/jobs"
+            # Try with content=true first for full job descriptions
+            url = f"https://boards-api.greenhouse.io/v1/boards/{company}/jobs?content=true"
             headers = {}
             
             if self.config.GREENHOUSE_API_KEY:

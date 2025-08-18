@@ -213,7 +213,6 @@ class JobApplicationSystem:
         if self.ingest_tracker:
             try:
                 with self.ingest_tracker.track_ingestion("job_processing", "full_cycle", {"calibration": calibration_mode}) as run_id:
-                try:
                     # Fetch all jobs
                     jobs = self.fetch_all_jobs()
                     self.ingest_tracker.increment_processed(len(jobs))
@@ -241,9 +240,6 @@ class JobApplicationSystem:
                         "run_id": run_id
                     }
                     
-                except Exception as e:
-                    self.logger.error(f"Error in job cycle: {str(e)}")
-                    raise
             except Exception as obs_error:
                 self.logger.warning(f"Observability tracking unavailable: {obs_error}")
                 # Fallback without observability tracking
