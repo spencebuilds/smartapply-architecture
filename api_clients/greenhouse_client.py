@@ -57,8 +57,42 @@ class GreenhouseClient:
             self.logger.error(f"Unexpected error fetching Greenhouse jobs for {company}: {str(e)}")
             return []
     
+    def discover_active_companies(self) -> List[str]:
+        """Discover companies that actually have active job postings on Greenhouse."""
+        # Test expanded list of real tech companies that might use Greenhouse
+        candidate_companies = [
+            # Known working companies
+            "stripe", "airbnb", "coinbase", "figma", "discord", "dropbox", "asana", 
+            "pinterest", "robinhood", "plaid", "brex", "rippling", "segment", "amplitude",
+            
+            # Additional tech companies to test
+            "buildkite", "lattice", "greenhouse", "airtable", "loom", "linear", 
+            "superhuman", "zapier", "mixpanel", "retool", "gusto", "checkr",
+            "apollo", "workato", "benchling", "allbirds", "carta", "flexport",
+            "scale", "nuro", "cruise", "pagerduty", "newrelic", "mongodb",
+            
+            # Large tech (may use Greenhouse for some roles)
+            "uber", "netflix", "spotify", "slack", "atlassian", "twitch", "zoom",
+            "square", "github", "shopify", "notion", "elastic", "confluent"
+        ]
+        
+        active_companies = []
+        self.logger.info(f"Testing {len(candidate_companies)} companies for active Greenhouse job postings...")
+        
+        for company in candidate_companies:
+            try:
+                jobs = self.fetch_jobs_for_company(company)
+                if jobs:
+                    active_companies.append(company)
+                    self.logger.info(f"✅ {company}: {len(jobs)} active jobs")
+            except Exception:
+                continue
+        
+        self.logger.info(f"Found {len(active_companies)} companies with active Greenhouse postings")
+        return active_companies
+
     def fetch_all_jobs(self, use_supabase: bool = True) -> List[Dict[str, Any]]:
-        """Fetch all available job postings from Greenhouse."""
+        """Fetch all available job postings from Greenhouse by discovering active companies."""
         companies = []
         
         if use_supabase:
@@ -70,21 +104,13 @@ class GreenhouseClient:
                     companies = supabase_companies
                     self.logger.info(f"Using {len(companies)} companies from Supabase")
                 else:
-                    self.logger.warning("No companies found in Supabase, falling back to hardcoded list")
+                    self.logger.warning("No companies found in Supabase, discovering active companies")
             except Exception as e:
-                self.logger.warning(f"Error fetching companies from Supabase: {str(e)}, using fallback list")
+                self.logger.warning(f"Error fetching companies from Supabase: {str(e)}, discovering active companies")
         
-        # Fallback to hardcoded list if Supabase is not available or empty
+        # Discover active companies if no Supabase data
         if not companies:
-            companies = [
-                "stripe", "github", "shopify", "airbnb", "uber", "netflix", "spotify",
-                "slack", "atlassian", "coinbase", "twitch", "square", "discord", "zoom",
-                "asana", "dropbox", "pinterest", "palantir", "checkr", "gusto", "retool",
-                "mixpanel", "amplitude", "buildkite", "apollo", "lattice", "workato",
-                "greenhouse", "airtable", "loom", "linear", "superhuman", "notion",
-                "figma", "robinhood", "plaid", "brex", "rippling", "zapier", "segment"
-            ]
-            self.logger.info("Using hardcoded company list")
+            companies = self.discover_active_companies()
         
         all_jobs = []
         for company in companies:

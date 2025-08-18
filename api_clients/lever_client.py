@@ -62,8 +62,34 @@ class LeverClient:
             self.logger.error(f"Unexpected error fetching Lever jobs for {company}: {str(e)}")
             return []
     
+    def discover_active_companies(self) -> List[str]:
+        """Discover companies that actually have active job postings on Lever."""
+        candidate_companies = [
+            # Tech companies likely to use Lever
+            "netflix", "uber", "github", "shopify", "slack", "atlassian", "postmates",
+            "flexport", "benchling", "allbirds", "carta", "discord", "figma", "notion", 
+            "linear", "retool", "vercel", "anthropic", "scale", "nuro", "cruise", "waymo",
+            "mongodb", "elastic", "confluent", "snowflake", "datadog", "okta", "crowdstrike",
+            "zscaler", "pagerduty", "newrelic", "splunk", "hashicorp", "gitlab", "docker"
+        ]
+        
+        active_companies = []
+        self.logger.info(f"Testing {len(candidate_companies)} companies for active Lever job postings...")
+        
+        for company in candidate_companies:
+            try:
+                jobs = self.fetch_jobs_for_company(company)
+                if jobs:
+                    active_companies.append(company)
+                    self.logger.info(f"✅ {company}: {len(jobs)} active jobs")
+            except Exception:
+                continue
+        
+        self.logger.info(f"Found {len(active_companies)} companies with active Lever postings")
+        return active_companies
+
     def fetch_all_jobs(self, use_supabase: bool = True) -> List[Dict[str, Any]]:
-        """Fetch all available job postings from Lever."""
+        """Fetch all available job postings from Lever by discovering active companies."""
         companies = []
         
         if use_supabase:
@@ -75,21 +101,13 @@ class LeverClient:
                     companies = supabase_companies
                     self.logger.info(f"Using {len(companies)} companies from Supabase")
                 else:
-                    self.logger.warning("No companies found in Supabase, falling back to hardcoded list")
+                    self.logger.warning("No companies found in Supabase, discovering active companies")
             except Exception as e:
-                self.logger.warning(f"Error fetching companies from Supabase: {str(e)}, using fallback list")
+                self.logger.warning(f"Error fetching companies from Supabase: {str(e)}, discovering active companies")
         
-        # Fallback to hardcoded list if Supabase is not available or empty
+        # Discover active companies if no Supabase data
         if not companies:
-            companies = [
-                "stripe", "github", "shopify", "airbnb", "uber", "netflix", "spotify", 
-                "coinbase", "twitch", "squareup", "segment", "lever", "brex", "notion",
-                "rippling", "zapier", "figma", "discord", "robinhood", "plaid", "zoom",
-                "asana", "dropbox", "pinterest", "palantir", "checkr", "gusto", "retool",
-                "mixpanel", "amplitude", "segment", "buildkite", "apollo", "lattice",
-                "workato", "greenhouse", "airtable", "loom", "linear", "superhuman"
-            ]
-            self.logger.info("Using hardcoded company list")
+            companies = self.discover_active_companies()
         
         all_jobs = []
         for company in companies:
