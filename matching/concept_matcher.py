@@ -1,6 +1,16 @@
 import re
+import logging
 from typing import Dict, Tuple
 from collections import defaultdict
+
+# Initialize calibration logger
+calib_logger = logging.getLogger('calibration')
+calib_handler = logging.FileHandler('calib.log', mode='w')  # Truncate file at start
+calib_formatter = logging.Formatter('%(asctime)s - CALIB - %(message)s')
+calib_handler.setFormatter(calib_formatter)
+calib_logger.addHandler(calib_handler)
+calib_logger.setLevel(logging.INFO)
+calib_logger.propagate = False
 
 # === CONCEPT GROUPINGS FROM RESUME RESEARCH ===
 
@@ -90,14 +100,42 @@ def recommend_optimal_resume(resume_scores: Dict[str, int]) -> Tuple[str, int]:
 
 # === MAIN FUNCTION FOR YOUR SYSTEM ===
 
-def analyze_job_posting(job_description: str, company: str) -> Dict:
+def analyze_job_posting(job_description: str, company: str, job_id: str = None, job_title: str = None) -> Dict:
     concept_scores = calculate_concept_alignment(job_description)
     resume_scores = score_all_resumes(concept_scores)
     best_resume, match_score = recommend_optimal_resume(resume_scores)
+    
+    # Calculate fit score as percentage (assuming max possible score for normalization)
+    max_possible_score = max(resume_scores.values()) if resume_scores else 0
+    total_concepts_found = sum(sum(concepts.values()) for concepts in concept_scores.values())
+    fit_score = (match_score / max(total_concepts_found, 1)) * 100 if total_concepts_found > 0 else 0
+    
+    # Debug logging for calibration
+    calib_logger.info(f"JOB_ANALYSIS: job_id={job_id or 'unknown'}, company='{company}', title='{job_title or 'unknown'}'")
+    
+    # Log matched raw terms to concept IDs
+    matched_terms = []
+    for resume, concepts in concept_scores.items():
+        for concept, count in concepts.items():
+            if count > 0:
+                matched_terms.append(f"{concept}({count})")
+    
+    calib_logger.info(f"MATCHED_TERMS: {', '.join(matched_terms) if matched_terms else 'none'}")
+    
+    # Log per-concept partial scores
+    for resume, concepts in concept_scores.items():
+        concept_scores_str = ', '.join([f"{concept}:{score}" for concept, score in concepts.items() if score > 0])
+        if concept_scores_str:
+            calib_logger.info(f"RESUME_CONCEPTS: {resume} -> {concept_scores_str}")
+    
+    # Log final fit score
+    calib_logger.info(f"FIT_SCORE: {fit_score:.2f}%")
+    calib_logger.info("---")
 
     return {
         "company": company,
         "match_score": match_score,
+        "fit_score": fit_score,
         "recommended_resume": best_resume,
         "resume_match_breakdown": resume_scores,
         "concept_breakdown": concept_scores.get(best_resume, {})

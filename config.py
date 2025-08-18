@@ -25,8 +25,8 @@ class Config:
         self.AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID", "") if self.USE_AIRTABLE else ""
         self.AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME", "Applications") if self.USE_AIRTABLE else ""
         
-        # Job Matching Configuration - further lowered to 15% to capture initial opportunities and debug matching
-        self.MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD", "15.0"))
+        # Job Matching Configuration - temporary calibration threshold
+        self.MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD", "10.0"))
         
         # Target Companies (no longer used for filtering, kept for backward compatibility)
         companies_str = os.getenv("TARGET_COMPANIES", "")

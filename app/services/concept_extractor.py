@@ -5,6 +5,7 @@ Extracts concepts from text using learned mappings and confidence scores.
 
 import re
 import logging
+import html
 from typing import List, Set, Optional
 from supabase import Client
 
@@ -55,6 +56,45 @@ class ConceptExtractor:
             self.logger.error(f"Error refreshing mapping cache: {str(e)}")
             self._cache_valid = False
     
+    def _normalize_text(self, text: str) -> str:
+        """
+        Normalize text for better concept extraction.
+        Handles HTML, lowercasing, whitespace, and basic plural normalization.
+        """
+        if not text:
+            return ""
+        
+        # Convert HTML to plain text
+        text = html.unescape(text)
+        text = re.sub(r'<[^>]+>', ' ', text)  # Remove HTML tags
+        
+        # Lowercase and collapse whitespace
+        text = text.lower()
+        text = re.sub(r'\s+', ' ', text).strip()
+        
+        # Basic plural to singular normalization
+        plurals = {
+            'platforms': 'platform',
+            'pipelines': 'pipeline',
+            'systems': 'system',
+            'services': 'service',
+            'applications': 'application',
+            'processes': 'process',
+            'products': 'product',
+            'tools': 'tool',
+            'metrics': 'metric',
+            'apis': 'api',
+            'databases': 'database',
+            'features': 'feature',
+            'frameworks': 'framework',
+            'libraries': 'library'
+        }
+        
+        for plural, singular in plurals.items():
+            text = re.sub(r'\b' + plural + r'\b', singular, text)
+        
+        return text
+    
     def extract(self, text: str, company_id: Optional[str] = None) -> List[str]:
         """
         Extract concepts from text using learned mappings.
@@ -69,6 +109,18 @@ class ConceptExtractor:
         if not text:
             return []
         
+        # Handle different job description field formats
+        if isinstance(text, dict):
+            # Extract from common job description fields
+            jd_text = ""
+            for field in ['descriptionHtml', 'content', 'description', 'jobDescription']:
+                if field in text and text[field]:
+                    jd_text += " " + str(text[field])
+            text = jd_text
+        
+        # Normalize text for better matching
+        normalized_text = self._normalize_text(text)
+        
         # Refresh cache if needed
         if not self._cache_valid:
             self._refresh_mapping_cache()
@@ -80,8 +132,8 @@ class ConceptExtractor:
         extracted_concepts: Set[str] = set()
         low_confidence_terms: Set[str] = set()
         
-        # Normalize text for matching
-        normalized_text = text.lower()
+        # Use the new normalization method for better matching
+        # (Note: normalized_text was already set above after field extraction)
         
         # Match against cached mappings
         for raw_term, mappings in self._mapping_cache.items():

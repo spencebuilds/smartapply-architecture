@@ -151,20 +151,46 @@ class KeywordMatcher:
                 'recommendation': 'Not a Product Manager role - skipped'
             }
         
-        # Use the new concept-based matching algorithm
-        job_content = f"{job.get('title', '')} {job.get('description', '')}"
+        # Use the new concept-based matching algorithm  
+        # Extract job content for analysis with better handling of different formats
+        job_content = ""
+        
+        # Extract description from different fields
+        description = job.get('description', '')
+        if isinstance(description, str) and description:
+            job_content += description + " "
+        elif isinstance(description, dict):
+            # Handle structured description (e.g., from Greenhouse)
+            content = description.get('content', '')
+            if content:
+                job_content += content + " "
+        elif isinstance(description, list) and description:
+            # Handle list format descriptions
+            for item in description:
+                if isinstance(item, dict):
+                    content = item.get('content', '')
+                    if content:
+                        job_content += content + " "
+                elif isinstance(item, str):
+                    job_content += item + " "
+        
+        # Add title to content
+        title = job.get('title', '')
+        if title:
+            job_content += title + " "
         company = job.get('company', 'Unknown')
         
         try:
-            analysis_result = analyze_job_posting(job_content, company)
+            job_id = job.get('id', 'unknown')
+            title = job.get('title', 'Unknown')
+            analysis_result = analyze_job_posting(job_content, company, job_id=job_id, job_title=title)
             
             # Convert the concept-based result to the expected format
             best_resume = analysis_result.get('recommended_resume', 'None')
             raw_score = analysis_result.get('match_score', 0)
             
-            # Convert raw concept count to percentage (normalize against typical range)
-            # Based on testing: good matches typically have 1-4 concept matches, excellent matches have 5+
-            normalized_score = min(100.0, (raw_score / 4.0) * 100.0) if raw_score > 0 else 0.0
+            # Use the fit_score directly as it's already a percentage
+            normalized_score = analysis_result.get('fit_score', 0.0)
             
             # Get matched concepts as "keywords" for compatibility
             concept_breakdown = analysis_result.get('concept_breakdown', {})
