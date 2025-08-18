@@ -4,12 +4,28 @@ Slack Events API handler for processing reactions and tracking job applications.
 
 import logging
 import re
+import os
 from typing import Dict, Any, Optional
 from datetime import datetime
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from config import Config
 from api_clients.airtable_client import AirtableClient
+
+# Supabase integration imports
+try:
+    from app.db.supabase_repo import SupabaseRepo
+    
+    # Initialize Supabase repo if credentials available
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+    
+    if SUPABASE_URL and SUPABASE_KEY:
+        REPO = SupabaseRepo(SUPABASE_URL, SUPABASE_KEY)
+    else:
+        REPO = None
+except ImportError:
+    REPO = None
 
 
 class SlackEventHandler:
@@ -56,14 +72,17 @@ class SlackEventHandler:
                 return False
             
             # Log application to Airtable
-            success = self._log_application_to_airtable(job_info, user)
+            airtable_success = self._log_application_to_airtable(job_info, user)
             
-            if success:
+            # Log application to Supabase (for learning)
+            supabase_success = self._log_application_to_supabase(job_info, user)
+            
+            if airtable_success or supabase_success:
                 self.logger.info(f"Successfully logged application for {job_info['company']} - {job_info['title']}")
                 # Send confirmation reaction
                 self._add_confirmation_reaction(channel, timestamp)
             
-            return success
+            return airtable_success or supabase_success
             
         except Exception as e:
             self.logger.error(f"Error handling reaction_added event: {str(e)}")
@@ -208,7 +227,72 @@ class SlackEventHandler:
             self.logger.error(f"Error logging application to Airtable: {str(e)}")
             return False
     
-
+    def _log_application_to_supabase(self, job_info: Dict[str, Any], user_id: str) -> bool:
+        """Log job application to Supabase for learning."""
+        try:
+            if not REPO:
+                self.logger.debug("Supabase repository not available, skipping Supabase logging")
+                return False
+            
+            # Find job posting by URL
+            result = REPO.sb.table("job_postings").select("id, job_description, extracted_concepts").eq("job_url", job_info["url"]).execute()
+            
+            if not result.data:
+                self.logger.info(f"Job posting not found in Supabase for URL: {job_info['url']}")
+                return False
+            
+            job_row = result.data[0]
+            job_posting_id = job_row["id"]
+            
+            # Get or create user (using a default email for now)
+            user_email = "spencer.hardwick.pm@gmail.com"  # Replace with actual user mapping
+            user_db_id = REPO.get_or_create_user(user_email)
+            
+            # Upsert application
+            app_id = REPO.upsert_application(
+                user_id=user_db_id,
+                job_posting_id=job_posting_id,
+                resume_id=None,
+                status="applied",
+                feedback=f"Auto-logged via Slack reaction by {user_id}",
+            )
+            
+            # Record translation events for learning
+            job_description = job_row.get("job_description", "")
+            extracted_concepts = job_row.get("extracted_concepts") or []
+            
+            for concept_name in extracted_concepts:
+                try:
+                    # Get concept_id
+                    concept_result = REPO.sb.table("concepts").select("id").eq("name", concept_name).execute()
+                    if not concept_result.data:
+                        continue
+                    
+                    concept_id = concept_result.data[0]["id"]
+                    
+                    # Find mappings for this concept that appear in the job description
+                    mappings_result = REPO.sb.table("concept_mappings").select("id, raw_term").eq("concept_id", concept_id).execute()
+                    
+                    for mapping in mappings_result.data:
+                        raw_term = mapping.get("raw_term", "")
+                        if raw_term and re.search(rf"\b{re.escape(raw_term)}\b", job_description, flags=re.IGNORECASE):
+                            # Record successful translation event
+                            REPO.record_translation_event(
+                                concept_mapping_id=mapping["id"],
+                                application_id=app_id,
+                                event_type="success"
+                            )
+                            self.logger.debug(f"Recorded translation success: {raw_term} -> {concept_name}")
+                
+                except Exception as e:
+                    self.logger.warning(f"Error recording translation event for concept {concept_name}: {e}")
+            
+            self.logger.info(f"Successfully logged application to Supabase: {job_info['title']}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error logging application to Supabase: {str(e)}")
+            return False
     
     def _determine_source(self, job_url: str) -> str:
         """Determine job source from URL."""

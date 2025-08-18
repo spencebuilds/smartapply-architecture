@@ -1,0 +1,314 @@
+Replit AI Agent – Multi‑File Upgrade Plan (Supabase + Learning)
+
+Follow these steps exactly. Create/update the listed files with the provided contents. Keep the rest of the repo unchanged.
+
+1) Dependencies
+
+**Edit **`` (add if missing):
+
+requests>=2.32.3
+slack-sdk>=3.36.0
+supabase>=2.4.0
+python-dotenv>=1.0.1
+Flask>=3.0.0
+
+2) Database Schema (run in Supabase SQL editor)
+
+Create a new file `` with the content below. Then copy/paste this SQL into Supabase > SQL editor and run it. If tables already exist, this script is compatible (uses UUIDs and correct FK order).
+
+-- Enable UUID generator (Supabase Postgres has pgcrypto available)
+create extension if not exists pgcrypto;
+
+-- 1) USERS
+create table if not exists users (
+  id uuid primary key default gen_random_uuid(),
+  email text unique not null,
+  name text,
+  working_style text,
+  strengths text,
+  career_goals text,
+  risk_tolerance text,
+  created_at timestamp default now()
+);
+
+-- 2) COMPANIES
+create table if not exists companies (
+  id uuid primary key default gen_random_uuid(),
+  name text unique,
+  language_patterns text[],
+  worldview_tags text[],
+  created_at timestamp default now()
+);
+
+-- 3) CONCEPTS
+create table if not exists concepts (
+  id uuid primary key default gen_random_uuid(),
+  name text unique not null
+);
+
+-- 4) RESUMES (master template & versions)
+create table if not exists resumes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users(id) on delete cascade,
+  name text,
+  summary text,
+  experience jsonb,
+  skills text[],
+  education jsonb,
+  certifications text[],
+  created_at timestamp default now()
+);
+
+-- 5) CASE STUDIES
+create table if not exists case_studies (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users(id) on delete cascade,
+  title text,
+  description text,
+  quantified_results text,
+  demonstrated_skills text[],
+  created_at timestamp default now()
+);
+
+-- 6) JOB POSTINGS
+create table if not exists job_postings (
+  id uuid primary key default gen_random_uuid(),
+  company_name text,
+  role_title text,
+  job_url text unique,
+  job_description text,
+  posted_at timestamp,
+  company_id uuid references companies(id) on delete set null,
+  extracted_concepts text[] default '{}',
+  created_at timestamp default now(),
+  updated_at timestamp default now()
+);
+
+-- 7) ROLE ANALYSIS
+create table if not exists role_analysis (
+  id uuid primary key default gen_random_uuid(),
+  job_posting_id uuid references job_postings(id) on delete cascade,
+  fit_score numeric,
+  reasoning text,
+  vocabulary_gaps text[],
+  optimization_strategy text,
+  created_at timestamp default now()
+);
+
+-- 8) RESUME OPTIMIZATIONS
+create table if not exists resume_optimizations (
+  id uuid primary key default gen_random_uuid(),
+  job_posting_id uuid references job_postings(id) on delete cascade,
+  resume_id uuid references resumes(id) on delete set null,
+  changes_applied text,
+  justification text,
+  optimized_resume jsonb,
+  created_at timestamp default now()
+);
+
+-- 9) APPLICATIONS
+create table if not exists applications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users(id) on delete cascade,
+  job_posting_id uuid references job_postings(id) on delete cascade,
+  resume_id uuid references resumes(id) on delete set null,
+  status text check (status in ('applied','interview','offer','rejected')),
+  feedback text,
+  submitted_at timestamp,
+  updated_at timestamp default now()
+);
+
+-- 10) CONCEPT MAPPINGS (raw term -> concept)
+create table if not exists concept_mappings (
+  id uuid primary key default gen_random_uuid(),
+  raw_term text,
+  concept_id uuid references concepts(id) on delete cascade,
+  user_id uuid references users(id) on delete set null,
+  company_id uuid references companies(id) on delete set null,
+  confidence_score numeric,
+  successful_match_count integer default 0,
+  created_at timestamp default now()
+);
+
+-- 11) TRANSLATION EVENTS (learning log)
+create table if not exists translation_events (
+  id uuid primary key default gen_random_uuid(),
+  concept_mapping_id uuid references concept_mappings(id) on delete cascade,
+  application_id uuid references applications(id) on delete cascade,
+  event_type text,
+  timestamp timestamp default now()
+);
+
+-- Indexes
+create index if not exists idx_job_postings_company on job_postings(company_id);
+create index if not exists idx_job_postings_url on job_postings(job_url);
+create index if not exists idx_concept_mappings_raw on concept_mappings(raw_term);
+create index if not exists idx_concept_mappings_concept on concept_mappings(concept_id);
+create index if not exists idx_translation_events_app on translation_events(application_id);
+
+-- updated_at trigger
+create or replace function update_timestamp() returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists trg_job_postings_updated on job_postings;
+create trigger trg_job_postings_updated
+before update on job_postings
+for each row execute function update_timestamp();
+
+Note: If you use RLS, add policies or use a service role key in Replit.
+
+3) Repository Layer (Supabase client)
+
+Create `` with this content (mirrors the schema above and is idempotent):
+
+<PASTE CONTENT FROM THE "supabase_repo.py" canvas here>
+
+4) Concept Extraction Service
+
+Create ``:
+
+import re
+from typing import List, Set
+from supabase import Client
+
+class ConceptExtractor:
+    def __init__(self, sb: Client):
+        self.sb = sb
+
+    def extract(self, text: str, company_id: str | None = None) -> List[str]:
+        if not text:
+            return []
+        rows = self.sb.table("concept_mappings").select("raw_term, concept_id, confidence_score").execute().data
+        extracted: Set[str] = set()
+        low_conf_terms: Set[str] = set()
+        for r in rows:
+            raw = r["raw_term"]
+            if raw and re.search(rf"\b{re.escape(raw)}\b", text, flags=re.IGNORECASE):
+                if (r.get("confidence_score") or 0) >= 0.7:
+                    # resolve concept name
+                    cid = r["concept_id"]
+                    cname = self.sb.table("concepts").select("name").eq("id", cid).execute().data
+                    if cname:
+                        extracted.add(cname[0]["name"])
+                else:
+                    low_conf_terms.add(raw)
+        # Optional: Claude fallback can be called here if needed.
+        return list(extracted)
+
+5) Update main.py (wire Supabase + extractor + repo)
+
+Edit `` and replace the top-level imports and the run_job_cycle storage block. Keep your existing fetchers and matching.
+
+# --- add imports ---
+from supabase import create_client, Client
+from app.db.supabase_repo import SupabaseRepo
+from app.services.concept_extractor import ConceptExtractor
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SB: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+REPO = SupabaseRepo(SUPABASE_URL, SUPABASE_KEY)
+EXTRACTOR = ConceptExtractor(SB)
+
+# inside JobApplicationSystem.__init__ (after clients):
+self.sb = SB
+self.repo = REPO
+self.extractor = EXTRACTOR
+
+# --- in process_jobs(), after a job passes the threshold ---
+# Attach extracted concepts to the job dict for downstream logging
+job["extracted_concepts"] = self.extractor.extract(job.get("description", ""))
+
+# --- in send_notifications(), after sending Slack ---
+# Persist job + role analysis (fit score uses best_match_score / 100)
+try:
+    fit = float(job["match_result"]["best_match_score"]) / 100.0
+    reasoning = job["match_result"].get("recommendation", "")
+    vocab_gaps = []  # optionally compute
+    strategy = f"Use {job['match_result'].get('best_resume','')}"
+    self.repo.store_job_analysis(
+        company_name=job.get("company", ""),
+        role_title=job.get("title", ""),
+        job_url=job.get("url", ""),
+        job_description=job.get("description", ""),
+        fit_score=fit,
+        reasoning=reasoning,
+        vocabulary_gaps=vocab_gaps,
+        optimization_strategy=strategy,
+    )
+except Exception as e:
+    self.logger.warning(f"Supabase persistence failed: {e}")
+
+This keeps your 15‑minute scheduler and JSON dedup intact while also writing to Supabase for analytics/learning.
+
+6) Update Slack Reaction Handler
+
+Edit `` to log applications + translation events using the repo:
+
+from app.db.supabase_repo import SupabaseRepo
+from supabase import create_client
+
+REPO = SupabaseRepo()
+
+class SlackEventHandler:
+    ...
+    def _log_application_to_supabase(self, job_info: dict, user_id: str) -> bool:
+        try:
+            # Find job posting by URL
+            res = REPO.sb.table("job_postings").select("id, job_description, extracted_concepts").eq("job_url", job_info["url"]).execute()
+            if not res.data:
+                return False
+            job_row = res.data[0]
+            job_posting_id = job_row["id"]
+
+            # Upsert application
+            # NOTE: replace with your actual applicant user_id if you store Slack user mapping
+            app_id = REPO.upsert_application(
+                user_id=REPO.get_or_create_user("spencer.hardwick.pm@gmail.com"),
+                job_posting_id=job_posting_id,
+                resume_id=None,
+                status="applied",
+                feedback=f"Auto-logged via Slack reaction by {user_id}",
+            )
+
+            # For each extracted concept, find mappings whose raw_term appears in the job description
+            desc = job_row.get("job_description", "")
+            for cname in (job_row.get("extracted_concepts") or []):
+                # resolve concept_id
+                c = REPO.sb.table("concepts").select("id").eq("name", cname).execute().data
+                if not c:  
+                    continue
+                cid = c[0]["id"]
+                # candidate mappings for this concept
+                maps = REPO.sb.table("concept_mappings").select("id, raw_term").eq("concept_id", cid).execute().data
+                for m in maps:
+                    raw = m.get("raw_term") or ""
+                    if raw and re.search(rf"\b{re.escape(raw)}\b", desc, flags=re.IGNORECASE):
+                        REPO.record_translation_event(concept_mapping_id=m["id"], application_id=app_id, event_type="success")
+            return True
+        except Exception as e:
+            self.logger.error(f"Supabase application log error: {e}")
+            return False
+
+7) Keep your dedup + schedule intact
+
+No change needed: your JobStorage + while‑loop every 900s remains. Supabase storage complements it.
+
+8) Smoke Test Checklist
+
+Run Repl: confirm no import errors.
+
+Wait for a match → Slack message arrives.
+
+Click ✅ reaction → check Supabase: applications + translation_events populated; concept_mappings.successful_match_count increments.
+
+Confirm job_postings contains extracted_concepts.
+
+9) (Optional) Claude Fallback Placement
+
+If you want Claude semantic mapping later, add a ClaudeTranslator class and call it from ConceptExtractor.extract() when a term is low confidence (< 0.7). Cache results with concept_mappings inserts via SupabaseRepo.get_or_create_concept_mapping().
+

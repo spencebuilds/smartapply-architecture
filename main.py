@@ -7,6 +7,7 @@ Orchestrates job fetching, matching, and notifications.
 import logging
 import time
 import threading
+import os
 from typing import List, Dict, Any
 from datetime import datetime
 
@@ -19,6 +20,24 @@ from matching.keyword_matcher import KeywordMatcher
 from storage.job_storage import JobStorage
 from utils.logger import setup_logger
 from scheduler import JobScheduler
+
+# New Supabase imports
+from supabase import create_client, Client
+from app.db.supabase_repo import SupabaseRepo
+from app.services.concept_extractor import ConceptExtractor
+
+# Initialize Supabase clients
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+if SUPABASE_URL and SUPABASE_KEY:
+    SB: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    REPO = SupabaseRepo(SUPABASE_URL, SUPABASE_KEY)
+    EXTRACTOR = ConceptExtractor(SB)
+else:
+    SB = None
+    REPO = None
+    EXTRACTOR = None
 
 
 class JobApplicationSystem:
@@ -39,23 +58,33 @@ class JobApplicationSystem:
         self.keyword_matcher = KeywordMatcher()
         self.job_storage = JobStorage()
         
+        # Initialize Supabase components
+        self.sb = SB
+        self.repo = REPO
+        self.extractor = EXTRACTOR
+        
+        if self.repo:
+            self.logger.info("Job Application System initialized with Supabase integration")
+        else:
+            self.logger.warning("Job Application System initialized without Supabase (missing credentials)")
+        
         self.logger.info("Job Application System initialized successfully")
     
     def fetch_all_jobs(self) -> List[Dict[str, Any]]:
         """Fetch jobs from all available sources."""
         all_jobs = []
         
-        # Fetch from Lever - now fetches all available jobs
+        # Fetch from Lever - using Supabase company list if available
         try:
-            lever_jobs = self.lever_client.fetch_jobs()
+            lever_jobs = self.lever_client.fetch_all_jobs(use_supabase=bool(self.repo))
             all_jobs.extend(lever_jobs)
             self.logger.info(f"Fetched {len(lever_jobs)} jobs from Lever")
         except Exception as e:
             self.logger.error(f"Error fetching Lever jobs: {str(e)}")
         
-        # Fetch from Greenhouse - now fetches all available jobs
+        # Fetch from Greenhouse - using Supabase company list if available
         try:
-            greenhouse_jobs = self.greenhouse_client.fetch_jobs()
+            greenhouse_jobs = self.greenhouse_client.fetch_all_jobs(use_supabase=bool(self.repo))
             all_jobs.extend(greenhouse_jobs)
             self.logger.info(f"Fetched {len(greenhouse_jobs)} jobs from Greenhouse")
         except Exception as e:
@@ -78,6 +107,17 @@ class JobApplicationSystem:
                 
                 if match_result['best_match_score'] >= self.config.MATCH_THRESHOLD:
                     job['match_result'] = match_result
+                    
+                    # Extract concepts using Supabase if available
+                    if self.extractor:
+                        try:
+                            job["extracted_concepts"] = self.extractor.extract(job.get("description", ""))
+                        except Exception as e:
+                            self.logger.warning(f"Concept extraction failed for job {job['id']}: {str(e)}")
+                            job["extracted_concepts"] = []
+                    else:
+                        job["extracted_concepts"] = []
+                    
                     processed_jobs.append(job)
                     
                     # Mark job as processed
@@ -106,6 +146,30 @@ class JobApplicationSystem:
                 
                 # Store in Airtable
                 self.airtable_client.store_job(job)
+                
+                # Persist job + role analysis to Supabase (if available)
+                if self.repo:
+                    try:
+                        fit_score = float(job["match_result"]["best_match_score"]) / 100.0
+                        reasoning = job["match_result"].get("recommendation", "")
+                        vocabulary_gaps = []  # Could be computed later
+                        strategy = f"Use {job['match_result'].get('best_resume','')}"
+                        
+                        self.repo.store_job_analysis(
+                            company_name=job.get("company", ""),
+                            role_title=job.get("title", ""),
+                            job_url=job.get("url", ""),
+                            job_description=job.get("description", ""),
+                            fit_score=fit_score,
+                            reasoning=reasoning,
+                            vocabulary_gaps=vocabulary_gaps,
+                            optimization_strategy=strategy,
+                        )
+                        
+                        self.logger.info(f"Stored job analysis in Supabase for {job['title']}")
+                        
+                    except Exception as e:
+                        self.logger.warning(f"Supabase persistence failed for job {job.get('id', 'unknown')}: {e}")
                 
                 self.logger.info(f"Sent notification for job: {job['title']} at {job['company']}")
                 
