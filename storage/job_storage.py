@@ -27,6 +27,10 @@ class JobStorage:
             if os.path.exists(self.storage_file):
                 with open(self.storage_file, 'r') as f:
                     data = json.load(f)
+                    # Handle case where file contains a list instead of dict (from calibration reset)
+                    if isinstance(data, list):
+                        self.logger.info("Converting processed jobs from list to dict format")
+                        return {}
                     self.logger.info(f"Loaded {len(data)} processed jobs from storage")
                     return data
             else:

@@ -35,7 +35,7 @@ if SUPABASE_URL and SUPABASE_KEY:
     REPO = SupabaseRepo(SUPABASE_URL, SUPABASE_KEY)
     EXTRACTOR = ConceptExtractor(SB)
 else:
-    SB = None
+    SB: Client | None = None
     REPO = None
     EXTRACTOR = None
 
