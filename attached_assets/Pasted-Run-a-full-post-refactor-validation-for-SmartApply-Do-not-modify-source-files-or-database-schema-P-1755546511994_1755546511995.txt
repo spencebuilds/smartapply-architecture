@@ -1,0 +1,54 @@
+Run a full post‑refactor validation for SmartApply. Do not modify source files or database schema. Print each step’s result clearly.
+
+Steps:
+
+1) Clean dependency install
+- Run: pip install -r requirements.txt --upgrade --force-reinstall
+- Verify slack-sdk and pyairtable are NOT installed.
+- If either is present, report as FAIL.
+
+2) Import sanity
+- Run a Python one-liner to import api_clients.supabase_client and print "supabase ok".
+- Run a Python one-liner to import main and print "main ok".
+- Report FAIL if any ImportError/stack trace appears.
+
+3) Config flags check
+- Run a Python snippet:
+  import config; print("USE_SLACK=", getattr(config, "USE_SLACK", None)); print("USE_AIRTABLE=", getattr(config, "USE_AIRTABLE", None))
+- Expect both to be False. Report PASS/FAIL.
+
+4) Smoke test: Concept extractor
+- Run a Python snippet:
+  from app.services.concept_extractor import ConceptExtractor
+  ce = ConceptExtractor()
+  print("extract:", ce.extract("Looking for a Product Manager with API platform and developer experience; strong stakeholder management."))
+- Print the returned concepts/terms so I can see at least Product Management/API/DevX/cross-functional equivalents if mapped.
+
+5) Short job monitor cycle (non-destructive)
+- Run: python start_job_monitor.py
+- Let it run ~60 seconds so it fetches at least once, then stop it.
+- During the run, confirm there are NO Slack or Airtable connection attempts or errors in logs.
+- Capture and print the last 100 log lines.
+
+6) Supabase persistence sanity
+- Run a small Python snippet using the existing Supabase repo/client to print row counts AFTER the short run:
+  - job_postings
+  - role_analysis
+- Example:
+  from app.db.supabase_repo import SupabaseRepo
+  r = SupabaseRepo()
+  print("job_postings:", r.count("job_postings"))
+  print("role_analysis:", r.count("role_analysis"))
+(If there’s no count helper, write a tiny inline query via the supabase client to count rows.)
+- Report PASS if counts are integers and non-negative. If they increased from prior run output in logs, note that.
+
+7) Summarize results
+- Print a final checklist summary with PASS/FAIL for:
+  - Dependencies clean (no slack-sdk/pyairtable)
+  - Imports ok (supabase_client, main)
+  - Flags ok (USE_SLACK=False, USE_AIRTABLE=False)
+  - Concept extractor returns non-empty list
+  - Monitor run produced no Slack/Airtable calls
+  - Supabase counts readable (and ideally >0)
+
+Do not change code, env vars, or database data beyond normal read/write from the monitor’s standard operation. If any step fails, stop and print the error and the exact command/output that failed.
