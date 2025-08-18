@@ -16,11 +16,19 @@ class AirtableClient:
         """Initialize Airtable client."""
         self.config = Config()
         self.logger = logging.getLogger(__name__)
-        self.base_url = f"https://api.airtable.com/v0/{self.config.AIRTABLE_BASE_ID}/{self.config.AIRTABLE_TABLE_NAME}"
-        self.headers = {
-            "Authorization": f"Bearer {self.config.AIRTABLE_API_KEY}",
-            "Content-Type": "application/json"
-        }
+        
+        if self.config.USE_AIRTABLE and self.config.AIRTABLE_API_KEY:
+            self.base_url = f"https://api.airtable.com/v0/{self.config.AIRTABLE_BASE_ID}/{self.config.AIRTABLE_TABLE_NAME}"
+            self.headers = {
+                "Authorization": f"Bearer {self.config.AIRTABLE_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            self.enabled = True
+        else:
+            self.base_url = None
+            self.headers = None
+            self.enabled = False
+            self.logger.info("Airtable integration disabled")
     
     def format_job_record(self, job: Dict[str, Any]) -> Dict[str, Any]:
         """Format job data for Airtable storage."""
@@ -48,6 +56,10 @@ class AirtableClient:
     
     def store_job(self, job: Dict[str, Any]) -> bool:
         """Store job information in Airtable."""
+        if not self.enabled:
+            self.logger.debug(f"Airtable disabled, skipping job storage for: {job.get('title', 'Unknown')}")
+            return True  # Return success to not break workflow
+        
         try:
             record = self.format_job_record(job)
             
@@ -76,6 +88,9 @@ class AirtableClient:
     
     def check_job_exists(self, job_id: str) -> bool:
         """Check if a job already exists in Airtable."""
+        if not self.enabled:
+            return False  # Always return False when disabled (no job exists)
+        
         try:
             params = {
                 "filterByFormula": f"{{Job ID}} = '{job_id}'"
@@ -99,6 +114,10 @@ class AirtableClient:
     
     def update_job_status(self, job_id: str, status: str, applied: bool = False) -> bool:
         """Update job application status in Airtable."""
+        if not self.enabled:
+            self.logger.debug(f"Airtable disabled, skipping status update for job: {job_id}")
+            return True  # Return success to not break workflow
+        
         try:
             # First, find the record
             params = {
@@ -149,6 +168,9 @@ class AirtableClient:
     
     def store_application(self, application_data: Dict[str, Any]) -> bool:
         """Store job application record in Airtable."""
+        if not self.enabled:
+            self.logger.debug("Airtable disabled, skipping application storage")
+            return True  # Return success to not break workflow
         try:
             record = {
                 "fields": application_data
@@ -179,6 +201,9 @@ class AirtableClient:
     
     def check_application_exists(self, job_url: str) -> bool:
         """Check if an application with this job URL already exists in Airtable."""
+        if not self.enabled:
+            return False  # Always return False when disabled (no application exists)
+        
         try:
             params = {
                 "filterByFormula": f"{{Job Posting URL}} = '{job_url}'"

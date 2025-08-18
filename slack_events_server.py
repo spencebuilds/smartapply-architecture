@@ -11,7 +11,13 @@ from utils.logger import setup_logger
 
 app = Flask(__name__)
 logger = setup_logger()
-event_handler = SlackEventHandler()
+
+# Initialize event handler
+try:
+    event_handler = SlackEventHandler()
+except Exception as e:
+    logger.warning(f"Failed to initialize SlackEventHandler: {e}")
+    event_handler = None
 
 
 @app.route('/slack/events', methods=['POST'])
@@ -26,6 +32,10 @@ def slack_events():
         
         # Handle event callbacks
         if data.get('type') == 'event_callback':
+            if not event_handler:
+                logger.warning("Event handler not initialized, skipping event processing")
+                return jsonify({'status': 'ok'}), 200
+            
             event = data.get('event', {})
             event_type = event.get('type')
             

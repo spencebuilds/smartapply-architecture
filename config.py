@@ -12,14 +12,18 @@ class Config:
     def __init__(self):
         """Initialize configuration from environment variables."""
         
-        # API Keys and Tokens
+        # Service Integration Flags
+        self.USE_SLACK = os.getenv("USE_SLACK", "false").lower() == "true"
+        self.USE_AIRTABLE = os.getenv("USE_AIRTABLE", "false").lower() == "true"
+        
+        # API Keys and Tokens (optional now)
         self.LEVER_API_KEY = os.getenv("LEVER_API_KEY", "")
         self.GREENHOUSE_API_KEY = os.getenv("GREENHOUSE_API_KEY", "")
-        self.SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN", "")
-        self.SLACK_CHANNEL_ID = os.getenv("SLACK_CHANNEL_ID", "")
-        self.AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY", "")
-        self.AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID", "")
-        self.AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME", "Applications")
+        self.SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN", "") if self.USE_SLACK else ""
+        self.SLACK_CHANNEL_ID = os.getenv("SLACK_CHANNEL_ID", "") if self.USE_SLACK else ""
+        self.AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY", "") if self.USE_AIRTABLE else ""
+        self.AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID", "") if self.USE_AIRTABLE else ""
+        self.AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME", "Applications") if self.USE_AIRTABLE else ""
         
         # Job Matching Configuration - further lowered to 15% to capture initial opportunities and debug matching
         self.MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD", "15.0"))
@@ -40,16 +44,25 @@ class Config:
     
     def _validate_config(self):
         """Validate that required configuration is present."""
-        required_vars = [
-            ("SLACK_BOT_TOKEN", self.SLACK_BOT_TOKEN),
-            ("SLACK_CHANNEL_ID", self.SLACK_CHANNEL_ID),
-            ("AIRTABLE_API_KEY", self.AIRTABLE_API_KEY),
-            ("AIRTABLE_BASE_ID", self.AIRTABLE_BASE_ID),
-        ]
+        required_vars = []
+        
+        # Only validate Slack credentials if Slack is enabled
+        if self.USE_SLACK:
+            required_vars.extend([
+                ("SLACK_BOT_TOKEN", self.SLACK_BOT_TOKEN),
+                ("SLACK_CHANNEL_ID", self.SLACK_CHANNEL_ID),
+            ])
+        
+        # Only validate Airtable credentials if Airtable is enabled
+        if self.USE_AIRTABLE:
+            required_vars.extend([
+                ("AIRTABLE_API_KEY", self.AIRTABLE_API_KEY),
+                ("AIRTABLE_BASE_ID", self.AIRTABLE_BASE_ID),
+            ])
         
         missing_vars = [var_name for var_name, var_value in required_vars if not var_value]
         
         if missing_vars:
             raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
         
-        # No longer require TARGET_COMPANIES since we fetch all available jobs
+        # Supabase credentials are handled by the repository layer

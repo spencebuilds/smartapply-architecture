@@ -35,11 +35,25 @@ class SlackEventHandler:
         """Initialize Slack event handler."""
         self.config = Config()
         self.logger = logging.getLogger(__name__)
-        self.client = WebClient(token=self.config.SLACK_BOT_TOKEN)
+        
+        # Optional Slack integration
+        if self.config.USE_SLACK and WebClient:
+            from slack_sdk import WebClient
+            self.client = WebClient(token=self.config.SLACK_BOT_TOKEN)
+            self.enabled = True
+        else:
+            self.client = None
+            self.enabled = False
+            self.logger.info("Slack event handler disabled")
+        
         self.airtable_client = AirtableClient()
     
     def handle_reaction_added(self, event_data: Dict[str, Any]) -> bool:
         """Handle reaction_added events from Slack."""
+        if not self.enabled:
+            self.logger.debug("Slack disabled, ignoring reaction event")
+            return False
+        
         try:
             reaction = event_data.get('reaction', '')
             user = event_data.get('user', '')
@@ -90,6 +104,9 @@ class SlackEventHandler:
     
     def _get_message_data(self, channel: str, timestamp: str) -> Optional[Dict[str, Any]]:
         """Retrieve message data from Slack."""
+        if not self.enabled:
+            return None
+        
         try:
             self.logger.info(f"Calling conversations_history for channel={channel}, timestamp={timestamp}")
             response = self.client.conversations_history(
@@ -305,6 +322,9 @@ class SlackEventHandler:
     
     def _add_confirmation_reaction(self, channel: str, timestamp: str) -> bool:
         """Add a confirmation reaction to show the application was logged."""
+        if not self.enabled:
+            return True  # Return success to not break workflow
+        
         try:
             response = self.client.reactions_add(
                 channel=channel,

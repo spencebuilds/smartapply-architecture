@@ -8,15 +8,23 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (August 18, 2025)
 
+## Simplified Supabase-Only Architecture - COMPLETED ✓ (August 18, 2025)
+- ✅ **ARCHITECTURAL SIMPLIFICATION**: Removed Slack and Airtable dependencies for standalone operation
+- ✅ **CONFIGURATION FLAGS**: Added `USE_SLACK = False` and `USE_AIRTABLE = False` in `config.py`
+- ✅ **NO-OP API CLIENTS**: Refactored `slack_client.py`, `airtable_client.py`, and `slack_event_handler.py` to safe no-ops
+- ✅ **DEPENDENCY MINIMIZATION**: Updated `pyproject.toml` to only include core packages (python-dotenv, requests, schedule, supabase)
+- ✅ **OPTIONAL INTEGRATION**: System runs without runtime errors when external API keys are missing
+- ✅ **BACKWARD COMPATIBILITY**: All function signatures preserved, methods return safe defaults when services disabled
+- ✅ **SUPABASE CORE**: System maintains full semantic vocabulary learning capabilities with 11-table learning database
+
 ## Multi-File Supabase + Learning Upgrade - COMPLETED ✓
 - ✅ **LEARNING DATABASE**: Comprehensive 11-table schema for semantic vocabulary learning
 - ✅ **REPOSITORY LAYER**: Full CRUD operations with `app/db/supabase_repo.py`
 - ✅ **CONCEPT EXTRACTION**: Intelligent concept mapping service with confidence scoring  
-- ✅ **DUAL LOGGING**: Slack reactions now log to both Airtable + Supabase for learning
 - ✅ **JOB ANALYSIS**: Automatic job posting analysis and concept extraction
 - ✅ **TRANSLATION EVENTS**: ML pipeline for vocabulary association learning
 - ✅ **SCHEMA FIX**: Resolved foreign key constraint errors with `schema_fixed.sql`
-- ✅ **BACKWARD COMPATIBILITY**: Maintains existing JSON deduplication and Airtable integration
+- ✅ **CORE FUNCTIONALITY**: System operates independently with Supabase PostgreSQL database only
 
 ## Previous Supabase Integration (August 16, 2025)
 - ✅ Added Supabase database integration for dynamic company management
@@ -53,12 +61,14 @@ Preferred communication style: Simple, everyday language.
 - **Text Normalization**: Cleans and standardizes text for consistent matching results
 
 ### Notification System
-- **Slack Integration**: Automated job alerts sent to configured Slack channels
+- **Optional Slack Integration**: Automated job alerts sent to configured Slack channels (when enabled)
 - **Rich Formatting**: Structured messages with job details, match scores, and direct application links
 - **Error Handling**: Robust error management for message delivery failures
+- **Standalone Operation**: System functions fully without external notification dependencies
 
 ### Data Storage
-- **Airtable Backend**: Cloud-based storage for job records and application tracking
+- **Supabase PostgreSQL**: Primary database with 11-table schema for semantic vocabulary learning and job tracking
+- **Optional Airtable Backend**: Cloud-based storage for job records and application tracking (when enabled)
 - **Duplicate Prevention**: Local JSON-based tracking to avoid reprocessing the same jobs
 - **Data Persistence**: File-based storage with automatic cleanup of old entries
 
@@ -69,7 +79,8 @@ Preferred communication style: Simple, everyday language.
 
 ## Configuration Management
 - **Environment-Based**: All sensitive data and settings managed through environment variables
-- **Validation Layer**: Startup validation to ensure required configuration is present
+- **Optional Services**: Configuration flags (`USE_SLACK`, `USE_AIRTABLE`) for enabling external integrations
+- **Validation Layer**: Startup validation only for enabled services
 - **Flexible Thresholds**: Adjustable matching scores and operational parameters
 
 ## Error Handling and Logging

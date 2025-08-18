@@ -5,9 +5,20 @@ Slack API client for sending job notifications.
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
-from slack_sdk import WebClient
-from slack_sdk.errors import SlackApiError
 from config import Config
+
+# Optional Slack imports (only if enabled)
+try:
+    config = Config()
+    if config.USE_SLACK:
+        from slack_sdk import WebClient
+        from slack_sdk.errors import SlackApiError
+    else:
+        WebClient = None
+        SlackApiError = Exception
+except ImportError:
+    WebClient = None
+    SlackApiError = Exception
 
 
 class SlackClient:
@@ -17,7 +28,14 @@ class SlackClient:
         """Initialize Slack client."""
         self.config = Config()
         self.logger = logging.getLogger(__name__)
-        self.client = WebClient(token=self.config.SLACK_BOT_TOKEN)
+        
+        if self.config.USE_SLACK and WebClient:
+            self.client = WebClient(token=self.config.SLACK_BOT_TOKEN)
+            self.enabled = True
+        else:
+            self.client = None
+            self.enabled = False
+            self.logger.info("Slack integration disabled")
     
     def format_job_message(self, job: Dict[str, Any]) -> str:
         """Format job information using the new template format."""
@@ -114,6 +132,10 @@ class SlackClient:
     
     def send_job_notification(self, job: Dict[str, Any]) -> bool:
         """Send a job notification to the configured Slack channel."""
+        if not self.enabled:
+            self.logger.debug(f"Slack disabled, skipping notification for job: {job.get('title', 'Unknown')}")
+            return True  # Return success to not break workflow
+        
         try:
             message = self.format_job_message(job)
             
@@ -140,6 +162,10 @@ class SlackClient:
     
     def send_status_message(self, message: str) -> bool:
         """Send a general status message to the Slack channel."""
+        if not self.enabled:
+            self.logger.debug(f"Slack disabled, skipping status message: {message}")
+            return True  # Return success to not break workflow
+        
         try:
             response = self.client.chat_postMessage(
                 channel=self.config.SLACK_CHANNEL_ID,

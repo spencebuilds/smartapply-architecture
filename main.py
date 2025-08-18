@@ -51,8 +51,10 @@ class JobApplicationSystem:
         # Initialize API clients
         self.lever_client = LeverClient()
         self.greenhouse_client = GreenhouseClient()
-        self.slack_client = SlackClient()
-        self.airtable_client = AirtableClient()
+        
+        # Initialize optional clients based on configuration
+        self.slack_client = SlackClient() if self.config.USE_SLACK else None
+        self.airtable_client = AirtableClient() if self.config.USE_AIRTABLE else None
         
         # Initialize matching and storage
         self.keyword_matcher = KeywordMatcher()
@@ -63,10 +65,19 @@ class JobApplicationSystem:
         self.repo = REPO
         self.extractor = EXTRACTOR
         
+        # Log integration status
+        integrations = []
         if self.repo:
-            self.logger.info("Job Application System initialized with Supabase integration")
+            integrations.append("Supabase")
+        if self.slack_client and self.slack_client.enabled:
+            integrations.append("Slack")
+        if self.airtable_client and self.airtable_client.enabled:
+            integrations.append("Airtable")
+        
+        if integrations:
+            self.logger.info(f"Job Application System initialized with: {', '.join(integrations)}")
         else:
-            self.logger.warning("Job Application System initialized without Supabase (missing credentials)")
+            self.logger.warning("Job Application System initialized without external integrations")
         
         self.logger.info("Job Application System initialized successfully")
     
@@ -141,11 +152,13 @@ class JobApplicationSystem:
         """Send Slack notifications for matched jobs."""
         for job in matched_jobs:
             try:
-                # Send Slack notification
-                self.slack_client.send_job_notification(job)
+                # Send Slack notification (if enabled)
+                if self.slack_client:
+                    self.slack_client.send_job_notification(job)
                 
-                # Store in Airtable
-                self.airtable_client.store_job(job)
+                # Store in Airtable (if enabled)
+                if self.airtable_client:
+                    self.airtable_client.store_job(job)
                 
                 # Persist job + role analysis to Supabase (if available)
                 if self.repo:
