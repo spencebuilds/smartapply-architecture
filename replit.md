@@ -6,10 +6,20 @@ An automated job application system that monitors job postings from multiple sou
 
 Preferred communication style: Simple, everyday language.
 
-# Recent Changes (August 16, 2025)
+# Recent Changes (August 18, 2025)
 
-## Supabase Integration - COMPLETED ✓
-- ✅ **NEW INTEGRATION**: Added Supabase database integration for dynamic company management
+## Multi-File Supabase + Learning Upgrade - COMPLETED ✓
+- ✅ **LEARNING DATABASE**: Comprehensive 11-table schema for semantic vocabulary learning
+- ✅ **REPOSITORY LAYER**: Full CRUD operations with `app/db/supabase_repo.py`
+- ✅ **CONCEPT EXTRACTION**: Intelligent concept mapping service with confidence scoring  
+- ✅ **DUAL LOGGING**: Slack reactions now log to both Airtable + Supabase for learning
+- ✅ **JOB ANALYSIS**: Automatic job posting analysis and concept extraction
+- ✅ **TRANSLATION EVENTS**: ML pipeline for vocabulary association learning
+- ✅ **SCHEMA FIX**: Resolved foreign key constraint errors with `schema_fixed.sql`
+- ✅ **BACKWARD COMPATIBILITY**: Maintains existing JSON deduplication and Airtable integration
+
+## Previous Supabase Integration (August 16, 2025)
+- ✅ Added Supabase database integration for dynamic company management
 - ✅ Created comprehensive SupabaseClient with full CRUD operations for companies table
 - ✅ Integrated with existing Lever and Greenhouse job fetching clients
 - ✅ Fallback system maintains reliability - uses hardcoded company list if Supabase unavailable
