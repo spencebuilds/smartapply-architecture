@@ -25,6 +25,9 @@ from scheduler import JobScheduler
 from supabase import create_client, Client
 from app.db.supabase_repo import SupabaseRepo
 from app.services.concept_extractor import ConceptExtractor
+from app.services.translator import ConceptTranslator
+from app.services.observability import IngestRunTracker, APICallTracker
+from app.services.resume_delta_service import ResumeDeltaService
 
 # Initialize Supabase clients
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -34,10 +37,18 @@ if SUPABASE_URL and SUPABASE_KEY:
     SB: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     REPO = SupabaseRepo(SUPABASE_URL, SUPABASE_KEY)
     EXTRACTOR = ConceptExtractor(SB)
+    TRANSLATOR = ConceptTranslator(SB, Config())
+    INGEST_TRACKER = IngestRunTracker(SB)
+    API_TRACKER = APICallTracker(SB)
+    RESUME_DELTA_SERVICE = ResumeDeltaService(SB)
 else:
     SB: Client | None = None
     REPO = None
     EXTRACTOR = None
+    TRANSLATOR = None
+    INGEST_TRACKER = None
+    API_TRACKER = None
+    RESUME_DELTA_SERVICE = None
 
 
 class JobApplicationSystem:
@@ -64,10 +75,14 @@ class JobApplicationSystem:
         self.sb = SB
         self.repo = REPO
         self.extractor = EXTRACTOR
+        self.translator = TRANSLATOR
+        self.ingest_tracker = INGEST_TRACKER
+        self.api_tracker = API_TRACKER
+        self.resume_delta_service = RESUME_DELTA_SERVICE
         
-        # Log integration status
+        # Log integration status  
         integrations = []
-        if self.repo:
+        if self.repo and self.translator and self.ingest_tracker:
             integrations.append("Supabase")
         if self.slack_client and self.slack_client.enabled:
             integrations.append("Slack")
@@ -103,7 +118,7 @@ class JobApplicationSystem:
         
         return all_jobs
     
-    def process_jobs(self, jobs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def process_jobs(self, jobs: List[Dict[str, Any]], calibration_mode: bool = False) -> List[Dict[str, Any]]:
         """Process jobs for matching and deduplication."""
         processed_jobs = []
         
@@ -189,32 +204,79 @@ class JobApplicationSystem:
             except Exception as e:
                 self.logger.error(f"Error sending notification for job {job.get('id', 'unknown')}: {str(e)}")
     
-    def run_job_cycle(self):
-        """Run a complete job processing cycle."""
+    def run_job_cycle(self, calibration_mode: bool = False):
+        """Run a complete job processing cycle with observability tracking."""
         self.logger.info("Starting job processing cycle")
         start_time = datetime.now()
         
-        try:
-            # Fetch all jobs
-            jobs = self.fetch_all_jobs()
-            self.logger.info(f"Total jobs fetched: {len(jobs)}")
-            
-            # Process jobs for matching
-            matched_jobs = self.process_jobs(jobs)
-            self.logger.info(f"Jobs matched: {len(matched_jobs)}")
-            
-            # Send notifications
-            if matched_jobs:
-                self.send_notifications(matched_jobs)
-            else:
-                self.logger.info("No new matching jobs found")
-            
-            # Log cycle completion
-            duration = datetime.now() - start_time
-            self.logger.info(f"Job cycle completed in {duration.total_seconds():.2f} seconds")
-            
-        except Exception as e:
-            self.logger.error(f"Error in job cycle: {str(e)}")
+        # Track ingestion with observability (skip if table not accessible)
+        if self.ingest_tracker:
+            try:
+                with self.ingest_tracker.track_ingestion("job_processing", "full_cycle", {"calibration": calibration_mode}) as run_id:
+                try:
+                    # Fetch all jobs
+                    jobs = self.fetch_all_jobs()
+                    self.ingest_tracker.increment_processed(len(jobs))
+                    self.logger.info(f"Total jobs fetched: {len(jobs)}")
+                    
+                    # Process jobs for matching
+                    matched_jobs = self.process_jobs(jobs, calibration_mode=calibration_mode)
+                    self.ingest_tracker.increment_successful(len(matched_jobs))
+                    self.logger.info(f"Jobs matched: {len(matched_jobs)}")
+                    
+                    # Send notifications (skip in calibration mode)
+                    if matched_jobs and not calibration_mode:
+                        self.send_notifications(matched_jobs)
+                    elif not matched_jobs:
+                        self.logger.info("No new matching jobs found")
+                    
+                    # Log cycle completion
+                    duration = datetime.now() - start_time
+                    self.logger.info(f"Job cycle completed in {duration.total_seconds():.2f} seconds")
+                    
+                    return {
+                        "total_fetched": len(jobs),
+                        "total_matched": len(matched_jobs),
+                        "duration_seconds": duration.total_seconds(),
+                        "run_id": run_id
+                    }
+                    
+                except Exception as e:
+                    self.logger.error(f"Error in job cycle: {str(e)}")
+                    raise
+            except Exception as obs_error:
+                self.logger.warning(f"Observability tracking unavailable: {obs_error}")
+                # Fallback without observability tracking
+                try:
+                    jobs = self.fetch_all_jobs()
+                    matched_jobs = self.process_jobs(jobs, calibration_mode=calibration_mode)
+                    if matched_jobs and not calibration_mode:
+                        self.send_notifications(matched_jobs)
+                    duration = datetime.now() - start_time
+                    return {
+                        "total_fetched": len(jobs),
+                        "total_matched": len(matched_jobs),
+                        "duration_seconds": duration.total_seconds()
+                    }
+                except Exception as e:
+                    self.logger.error(f"Error in fallback job cycle: {str(e)}")
+                    return {"total_fetched": 0, "total_matched": 0, "duration_seconds": 0}
+        else:
+            # Fallback without tracking
+            try:
+                jobs = self.fetch_all_jobs()
+                matched_jobs = self.process_jobs(jobs, calibration_mode=calibration_mode)
+                if matched_jobs and not calibration_mode:
+                    self.send_notifications(matched_jobs)
+                duration = datetime.now() - start_time
+                return {
+                    "total_fetched": len(jobs),
+                    "total_matched": len(matched_jobs),
+                    "duration_seconds": duration.total_seconds()
+                }
+            except Exception as e:
+                self.logger.error(f"Error in job cycle: {str(e)}")
+                return {"total_fetched": 0, "total_matched": 0, "duration_seconds": 0}
     
     def start(self):
         """Start the automated job application system."""

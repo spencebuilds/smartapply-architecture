@@ -26,7 +26,12 @@ class Config:
         self.AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME", "Applications") if self.USE_AIRTABLE else ""
         
         # Job Matching Configuration - temporary calibration threshold
-        self.MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD", "10.0"))
+        self.MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD", "0.10"))
+        
+        # SmartApply Rev A Configuration
+        self.USE_CLAUDE_FALLBACK = os.getenv("USE_CLAUDE_FALLBACK", "true").lower() == "true"
+        self.CLAUDE_DAILY_LIMIT_PER_COMPANY = int(os.getenv("CLAUDE_DAILY_LIMIT_PER_COMPANY", "10"))
+        self.LLM_CACHE_TTL_DAYS = int(os.getenv("LLM_CACHE_TTL_DAYS", "7"))
         
         # Target Companies (no longer used for filtering, kept for backward compatibility)
         companies_str = os.getenv("TARGET_COMPANIES", "")
