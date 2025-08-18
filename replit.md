@@ -8,6 +8,15 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (August 18, 2025)
 
+## SmartApply Rev A Schema Deployment - COMPLETED ✓ (August 18, 2025)
+- ✅ **DATABASE SCHEMA UPGRADE**: Deployed comprehensive 19-table SmartApply Rev A schema
+- ✅ **SECURITY IMPLEMENTATION**: Enabled Row Level Security (RLS) on 6 user-owned tables with owner policies
+- ✅ **PERFORMANCE OPTIMIZATION**: Created 8 strategic indexes including lower(raw_term) for concept matching
+- ✅ **DATA TYPES**: Implemented mapping_scope enum and UUID primary keys with gen_random_uuid()
+- ✅ **SYSTEM TABLES**: Added api_calls, ingest_runs, llm_cache for comprehensive system tracking
+- ✅ **RESUME SYSTEM**: Full resume optimization pipeline with master_bullets, resume_deltas, translation_event_mappings
+- ✅ **NO BREAKING CHANGES**: Schema applied safely without dropping existing tables
+
 ## Simplified Supabase-Only Architecture - COMPLETED ✓ (August 18, 2025)
 - ✅ **ARCHITECTURAL SIMPLIFICATION**: Removed Slack and Airtable dependencies for standalone operation
 - ✅ **CONFIGURATION FLAGS**: Added `USE_SLACK = False` and `USE_AIRTABLE = False` in `config.py`
