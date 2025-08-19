@@ -1,0 +1,122 @@
+{
+  "operations_version": "v1",
+  "operations": [
+    {
+      "op": "upsert",
+      "table": "companies",
+      "match_on": { "name": "Aspect Software" },
+      "values": {
+        "name": "Aspect Software",
+        "domain": "aspect.com",
+        "notes": "Reimagining workforce management tools; remote OK, Denver/Boulder hybrid preferred.",
+        "ats": null
+      },
+      "return": ["id", "name"]
+    },
+    {
+      "op": "upsert",
+      "table": "job_postings",
+      "match_on": { "company_name": "Aspect Software", "title": "Staff Technical Product Manager (AI/ML)" },
+      "values": {
+        "source": "LinkedIn",
+        "external_id": null,
+        "company_name": "Aspect Software",
+        "title": "Staff Technical Product Manager (AI/ML)",
+        "department": "Product",
+        "location": "Remote (US) — Denver/Boulder preferred",
+        "employment_type": "Full-time",
+        "compensation_min": 165000,
+        "compensation_max": 185000,
+        "currency": "USD",
+        "posted_at": "__NOW__",
+        "url": null,
+        "tags": ["AI/ML", "Forecasting", "Intelligent Automation", "Decision Support", "Workforce Management"],
+        "description_text": "Company Overview\nBuilding upon more than 50 years of industry-leading experience, Aspect Software is reimagining workforce management tools with a new approach to innovation.\n\nPosition Overview\nSeeking a Staff Product Manager to lead strategy and development of AI/ML-powered capabilities across our workforce management platform; drive vision, define roadmaps, manage full product lifecycle; partner with data science, ML engineers, and platform teams; ship scalable AI systems.\n\nKey Responsibilities\n• Define/drive strategy and roadmap for AI/ML initiatives incl. forecasting, intelligent automation, decision-making tools\n• Partner with data science, ML engineers, and platform teams to design and deliver scalable AI systems\n• Lead end-to-end lifecycle (incubation → delivery → iteration → growth/sunset)\n• Develop product strategies aligned to business objectives; prioritize via customer needs, market trends, and strategic goals\n• Conduct market research and competitive analysis; translate insights to roadmap/features\n• Act as thought leader and mentor\n\nQualifications\n• 7+ yrs PM experience; 3+ yrs building/managing AI/ML-powered products\n• Track record of user-centric, scalable solutions; Agile; excellent communication"
+      },
+      "return": ["id", "company_id", "title"]
+    },
+    {
+      "op": "insert",
+      "table": "role_analyses",
+      "values": {
+        "job_posting_lookup": { "company_name": "Aspect Software", "title": "Staff Technical Product Manager (AI/ML)" },
+        "overall_fit_score": 78,
+        "fit_reasoning": "Good fit with gaps – strong infra/data platform leadership at enterprise scale; Databricks, Great Expectations, and CI/CD work directly enable AI/ML initiatives. Gap: less direct ownership of customer-facing AI features; new to workforce management domain.",
+        "key_matches": {
+          "platform_experience": "Ticketmaster platform: $5.1B inventory, 500M+ transactions annually",
+          "cross_functional_leadership": "Partnered across 15+ teams; alignment across SVPs/VPs/EMs",
+          "ai_ml_foundation": "Databricks data mart + Great Expectations data quality enabling forecasting/intelligent automation"
+        },
+        "vocabulary_gaps": {
+          "customer_facing_ai_features": "platform_enablement_for_ai",
+          "workforce_management_domain": "marketplace/pricing_platforms"
+        },
+        "missing_requirements": ["explicit leadership of shipped customer-facing AI features"],
+        "red_flags": null,
+        "company_notes": "Domain: workforce management; remote acceptable but Colorado preferred.",
+        "application_priority": "medium_high",
+        "confidence_level": 8,
+        "optimization_strategy": "Reframe platform/data infra as AI/ML-enabling outcomes (forecasting, automation, decision tools). Preserve factual achievements; translate vocabulary to match JD."
+      },
+      "return": ["id", "job_posting_id"]
+    },
+    {
+      "op": "insert",
+      "table": "resume_optimizations",
+      "values": {
+        "job_posting_lookup": { "company_name": "Aspect Software", "title": "Staff Technical Product Manager (AI/ML)" },
+        "role_analysis_lookup": { "job_posting_company_name": "Aspect Software", "job_posting_title": "Staff Technical Product Manager (AI/ML)" },
+        "optimization_deltas": [
+          {
+            "section": "Summary",
+            "original": "Platform Product Manager operating at Senior/Staff PM scope with 7+ years of experience building enterprise-scale infrastructure, CI/CD systems, and data platforms.",
+            "optimized": "Staff-level Platform Product Manager with 7+ years of experience delivering enterprise-scale infrastructure, data platforms, and CI/CD systems. Proven success enabling AI/ML initiatives by building modern data stacks, driving cross-functional product strategy, and reducing deployment risk by 95%.",
+            "reasoning": "Make AI/ML enablement explicit while preserving factual achievements."
+          },
+          {
+            "section": "Experience - Ticketmaster",
+            "original": "Established Databricks data mart from fragmented sources, enabling unified schema documentation and company’s first AI/ML product roadmap.",
+            "optimized": "Built Databricks data mart integrating fragmented sources, delivering the foundation for AI/ML forecasting and intelligent automation across pricing workflows.",
+            "reasoning": "Map data platform to JD outcomes (forecasting/automation)."
+          },
+          {
+            "section": "Experience - Great Expectations",
+            "original": "Launched v3 API and redesigned integration guides, increasing adoption by 1100% and enabling enterprise monetization strategy.",
+            "optimized": "Launched v3 API and production deployment patterns, reducing data errors by 95% and enabling scalable ML model training with 1,100% growth in adoption.",
+            "reasoning": "Frame as ML data quality enablement."
+          },
+          {
+            "section": "Experience - CI/CD",
+            "original": "Led CI/CD system overhaul using Infrastructure as Code (Terraform), reducing deployment errors by 95% and major incidents by 62.5%.",
+            "optimized": "Redesigned CI/CD with IaC to ensure reliable environments for ML experimentation, cutting deployment errors by 95% and major incidents by 62.5%.",
+            "reasoning": "Tie reliability to ML experimentation velocity."
+          }
+        ],
+        "optimization_reasoning": "AI/ML enablement framing aligned to JD (forecasting, intelligent automation, decision tools).",
+        "optimized_resume_text": "Spencer Hardwick\nVancouver, WA • shardwick88@gmail.com • linkedin.com/in/spencerhardwick\n\nSummary\nStaff-level Platform Product Manager with 7+ years of experience delivering enterprise-scale infrastructure, data platforms, and CI/CD systems. Proven success enabling AI/ML initiatives by building modern data stacks, driving cross-functional product strategy, and reducing deployment risk by 95%. Experienced in leading data infrastructure that supports forecasting, intelligent automation, and decision-support systems at global scale. Skilled at bridging technical and business stakeholders to drive adoption of AI/ML-powered capabilities and measurable business outcomes.\n\nSkills\nAI/ML Platform Foundations • Data Platforms • CI/CD Pipelines • API Design & Integration • Observability (Prometheus, Grafana) • Cloud Infrastructure (AWS, Azure, GCP) • Microservices Architecture • Event-Driven Systems (Kafka) • Terraform & IaC • Databricks • SQL & NoSQL • Data Quality (Great Expectations) • Metrics & SLAs • Agile/Scrum • Cross-Functional Leadership • Platform Roadmapping\n\nExperience\nTicketmaster — Product Manager, Platform (Senior/Staff scope)  |  2022 – Present\n• Defined product strategy for infrastructure supporting $5.1B in live event inventory and 500M+ annual transactions.\n• Built Databricks data mart integrating fragmented sources, delivering the foundation for AI/ML forecasting and intelligent automation across pricing workflows.\n• Partnered with Platform Engineering, Data Science, and Analytics to deploy real-time observability and Spark-based revenue dashboards across 15+ teams.\n• Led CI/CD system overhaul with Terraform IaC, ensuring reliable environments for ML experimentation and cutting deployment errors by 95% and major incidents by 62.5%.\n• Launched Kubernetes-based microservice automating pricing workflows, saving 1,300+ ops hours annually and enabling AI/ML-driven optimization of ticketing operations.\n• Aligned SVPs, VPs, and EMs on scaling reliability and experimentation velocity across the enterprise.\n\nGreat Expectations — Product Manager, Data Products  |  2021 – 2022\n• First PM hire; owned roadmap and open-source data quality platform used by thousands of engineers.\n• Reduced week-2 churn by 200% with production-grade BigQuery deployment templates, enabling reliable ML model training pipelines.\n• Launched v3 API and redesigned integration guides, driving 1,100% growth in adoption and supporting enterprise AI/ML data quality at scale.\n• Directed cross-functional UX research and documentation upgrades across cloud-native environments.\n\nBalto Software — Product Manager, Integrations  |  2020 – 2021\n• Delivered event-driven microservice integrations for AI/NLP systems, improving tooling usage 300% and enabling real-time coaching.\n\nClever Real Estate — Lead Customer Success Manager  |  2018 – 2020\n• Created internal ML-based lead routing tool, improving conversion through real-time data processing.\n\nEducation\nB.Sc., Data Management & Data Analytics — Western Governors University",
+        "vocabulary_translations": {
+          "platform_infrastructure": ["AI/ML platform foundations", "decision-support infrastructure"],
+          "data_mart": ["AI/ML forecasting foundation"],
+          "ci_cd_reliability": ["reliable environments for ML experimentation"],
+          "data_quality": ["production-grade ML data quality"]
+        },
+        "case_studies_highlighted": ["databricks_data_mart", "great_expectations_data_quality", "ci_cd_overhaul", "forecast_bypass_decision"],
+        "ats_score_estimate": 85
+      },
+      "return": ["id", "job_posting_id"]
+    },
+    {
+      "op": "upsert",
+      "table": "applications",
+      "match_on": { "job_posting_lookup.title": "Staff Technical Product Manager (AI/ML)", "job_posting_lookup.company_name": "Aspect Software" },
+      "values": {
+        "job_posting_lookup": { "company_name": "Aspect Software", "title": "Staff Technical Product Manager (AI/ML)" },
+        "resume_optimization_lookup": { "job_posting_company_name": "Aspect Software", "job_posting_title": "Staff Technical Product Manager (AI/ML)" },
+        "status": "draft",
+        "applied_via": "LinkedIn Easy Apply",
+        "notes": "Aspect Software Staff Technical PM (AI/ML)."
+      },
+      "return": ["id", "status"]
+    }
+  ]
+}

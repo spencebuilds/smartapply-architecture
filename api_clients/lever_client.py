@@ -25,7 +25,10 @@ class LeverClient:
             headers = {"Accept": "application/json"}
             
             if self.config.LEVER_API_KEY:
-                headers["Authorization"] = f"Basic {self.config.LEVER_API_KEY}"
+                # Lever uses basic auth with API key as username and blank password
+                import base64
+                credentials = base64.b64encode(f"{self.config.LEVER_API_KEY}:".encode()).decode()
+                headers["Authorization"] = f"Basic {credentials}"
             
             response = requests.get(url, headers=headers, timeout=30)
             
