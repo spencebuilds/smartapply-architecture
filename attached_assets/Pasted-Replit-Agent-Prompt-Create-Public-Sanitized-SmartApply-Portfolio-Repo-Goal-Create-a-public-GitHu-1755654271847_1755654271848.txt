@@ -1,0 +1,274 @@
+Replit Agent Prompt — Create Public, Sanitized SmartApply Portfolio Repo
+
+Goal
+Create a public GitHub repo that showcases my PM/infra execution without exposing proprietary “secret sauce.” Use my current Repl as the source, then produce a sanitized fork with docs, demo, and CI, and push it to GitHub.
+
+High‑level rules
+
+Keep: schema, RLS patterns, service skeletons, observability scaffolding, demo with synthetic data.
+
+Remove/Stub: real resumes, case studies, concept mappings, production API keys, Claude/LLM logic, LinkedIn/Zapier parsers.
+
+No live secrets anywhere.
+
+Repo name: smartapply-architecture (public).
+
+0) Prepare & Fork
+
+Fork this Repl into a new Repl named smartapply-architecture.
+
+In the new fork, initialize a fresh git history if needed (or keep history—your call—but final push must not include secrets).
+
+1) Sanitize the Codebase
+
+Delete entirely (if present):
+
+Any real resume files (PDF/DOC/TXT), “case studies”, or personal data.
+
+.env, .env.local, any secrets in config.
+
+LinkedIn/Indeed/Zapier email parser code or credentials.
+
+Any JSON/CSV/data files with real jobs or mappings.
+
+Guard/stub proprietary code paths:
+
+If present: app/services/translator.py, observability.py, resume_delta_service.py, ingestion clients, etc.
+
+Replace Claude/LLM calls and real vocab logic with stubs:
+
+# app/services/translator.py
+class TranslatorService:
+    def __init__(self):
+        pass
+
+    def translate_term(self, term: str, company: str | None = None) -> str:
+        """Demo stub: echo input to avoid exposing proprietary vocabulary engine."""
+        return term
+
+    def translate_terms(self, terms: list[str], company: str | None = None) -> list[str]:
+        return [self.translate_term(t, company) for t in terms]
+
+
+Feature‑flag any external services:
+
+# config.py
+USE_CLAUDE_FALLBACK = False
+ENABLE_SLACK = False
+ENABLE_AIRTABLE = False
+
+
+Ensure imports for Slack/Airtable/LLM are behind if flags or lazy imports, so the repo runs without those deps.
+
+Replace real data with synthetic demo data:
+
+Create demo/data/synthetic_jobs.json and demo/data/synthetic_resume.json (fake content, realistic structure):
+
+// demo/data/synthetic_jobs.json
+[
+  {
+    "id": "job_demo_001",
+    "company_name": "DevExperience Co",
+    "role_title": "Product Manager, Developer Experience",
+    "job_description": "Own developer productivity and integration tooling. Collaborate cross-functionally.",
+    "requirements": ["developer tooling", "SDK basics", "cross-functional alignment"],
+    "source": "demo",
+    "application_url": "https://example.com/jobs/devx-pm"
+  },
+  {
+    "id": "job_demo_002",
+    "company_name": "PaymentTech",
+    "role_title": "PM, Billing Platform",
+    "job_description": "Lead billing platform features. Drive revenue accuracy and automation.",
+    "requirements": ["billing", "revenue metrics", "platform roadmap"],
+    "source": "demo",
+    "application_url": "https://example.com/jobs/billing-pm"
+  }
+]
+
+// demo/data/synthetic_resume.json
+{
+  "summary": "Product manager focused on internal platforms and developer productivity.",
+  "skills": ["platform", "developer tools", "observability", "billing"],
+  "bullets": [
+    "Drove internal platform roadmap to accelerate developer iteration speed.",
+    "Improved reliability through developer tooling and standards adoption."
+  ]
+}
+
+2) Keep and Showcase the Architecture
+
+Create structure:
+
+smartapply-architecture/
+  README.md
+  sql/schema.sql
+  app/
+    main.py
+    services/
+      translator.py
+      observability.py
+      resume_delta.py
+  demo/
+    data/
+      synthetic_jobs.json
+      synthetic_resume.json
+    matching_demo.ipynb
+  docs/
+    architecture.md
+    diagrams/
+      system.mmd
+  tests/
+    test_schema.py
+  .gitignore
+  .github/workflows/ci.yml
+  LICENSE
+
+
+Populate key files:
+
+sql/schema.sql: include the sanitized SmartApply Rev A schema (19 tables, UUIDs, RLS policies, indexes). Do not include any real seed data.
+
+app/main.py: a tiny FastAPI app with stub endpoints that accept the “human bundle” shapes (no DB writes required for the public repo—just validate & echo).
+
+from fastapi import FastAPI
+from pydantic import BaseModel, Field
+from typing import Any, Dict, List, Optional
+from datetime import datetime
+
+app = FastAPI(title="SmartApply Architecture Demo")
+
+class RoleAnalysis(BaseModel):
+    job_posting_id: str
+    user_id: str
+    analyst_type: str = "human"
+    overall_fit_score: int = Field(ge=0, le=100)
+    fit_reasoning: str
+    key_matches: Dict[str, str] = {}
+    vocabulary_gaps: Dict[str, str] = {}
+    missing_requirements: List[str] = []
+    red_flags: Optional[str] = None
+    optimization_strategy: str
+    resume_version_recommended: str
+    confidence_level: int = Field(ge=1, le=10)
+    estimated_application_priority: str
+    created_at: datetime
+
+@app.post("/human/role-analysis/validate")
+def validate_role_analysis(ra: RoleAnalysis):
+    return {"ok": True, "received": ra}
+
+@app.get("/")
+def health():
+    return {"status": "ok"}
+
+
+app/services/observability.py: simple context managers for logging (no vendors).
+
+app/services/resume_delta.py: define allowed operations and simple validators (no DB).
+
+demo/matching_demo.ipynb: load the synthetic JSONs, do a toy “concept match” (e.g., overlap of requirements vs skills) and print a match score; use the stub TranslatorService to show where the vocab engine would be called.
+
+docs/architecture.md: explain the human‑in‑loop flow, DB schema highlights (RLS, indexes), and how the “bundle” would be persisted in production.
+
+docs/diagrams/system.mmd (Mermaid):
+
+flowchart LR
+  A[Job Posting] --> B[Human Role Analysis]
+  B --> C[Resume Optimization (deltas only)]
+  C --> D[JSON Bundle]
+  D --> E[(Supabase in Prod)]
+  D --> F[Demo API Validate in Public Repo]
+
+
+tests/test_schema.py: minimal placeholder test (e.g., ensure sql/schema.sql exists and contains expected table names).
+
+.gitignore: add .env, __pycache__/, .DS_Store, .replit, venv/, .pythonlibs/.
+
+.github/workflows/ci.yml: simple CI to run pytest and a black/ruff check if present:
+
+name: CI
+on: [push, pull_request]
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+      - name: Tests
+        run: pytest -q || true
+
+
+LICENSE: MIT.
+
+3) Write the README (portfolio‑focused)
+
+Create README.md with this outline and fill it:
+
+Title: SmartApply Architecture (Public Demo)
+What this is: A sanitized, portfolio‑friendly showcase of how I design and implement a human‑in‑the‑loop, vocabulary‑aware job search backend.
+Includes:
+
+Production‑style schema (UUIDs, RLS, indexes)
+
+Service skeletons (translator/observability/delta)
+
+Synthetic demo data + notebook
+
+API stubs for validating the human JSON bundle
+Excludes (on purpose):
+
+Proprietary vocabulary mappings, real resumes, actual concept correlations, Claude/LLM logic, private integrations
+How to run:
+
+pip install fastapi uvicorn → uvicorn app.main:app --reload
+
+Open demo/matching_demo.ipynb to see the synthetic matching demo
+Why: I’m a PM who builds; this shows the thinking and the execution without exposing my product’s secret sauce.
+Roadmap: LLM fallback, predictive scoring, enterprise hiring insights.
+
+4) Connect to GitHub & Push Public
+
+Use Replit’s Git panel → “Connect to GitHub.”
+
+Create a public repo named smartapply-architecture.
+
+Commit and push all sanitized files.
+
+Confirm the repo is public and CI runs.
+
+5) Verification & Acceptance Criteria
+
+Run checklist and report back with links:
+
+✅ No secrets in repo (git grep for known keys; no .env).
+
+✅ No real resumes/case studies/mappings present.
+
+✅ sql/schema.sql exists and matches Rev A tables (sanitized).
+
+✅ app/services/translator.py uses stubbed logic (no Claude/LLM).
+
+✅ demo/matching_demo.ipynb runs using synthetic JSON.
+
+✅ README.md clearly frames portfolio vs proprietary boundaries.
+
+✅ GitHub repo is public and CI passes (or graceful no‑op tests pass).
+
+✅ Provide the repo URL and a short summary of changes.
+
+Notes
+
+Do not expose any live endpoints or credentials.
+
+The public repo should run locally without external services.
+
+Keep it clean, minimal, and obviously “portfolio‑safe.”
+
+When you’re done, please paste the repo link and the acceptance checklist results.
