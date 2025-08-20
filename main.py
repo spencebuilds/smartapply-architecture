@@ -121,18 +121,38 @@ class JobApplicationSystem:
     def process_jobs(self, jobs: List[Dict[str, Any]], calibration_mode: bool = False) -> List[Dict[str, Any]]:
         """Process jobs for matching and deduplication."""
         processed_jobs = []
+        pm_jobs_found = 0
+        pm_jobs_processed = 0
+        pm_jobs_matched = 0
+        
+        self.logger.info(f"Processing {len(jobs)} jobs for matching...")
         
         for job in jobs:
             try:
+                # Debug: Check if this is a PM role
+                is_pm = self.keyword_matcher.is_product_manager_role(job)
+                if is_pm:
+                    pm_jobs_found += 1
+                    self.logger.info(f"Found PM job: {job.get('title', 'Unknown')} at {job.get('company', 'Unknown')} (ID: {job.get('id', 'unknown')})")
+                
                 # Check if job already processed
                 if self.job_storage.is_job_processed(job['id']):
+                    if is_pm:
+                        self.logger.info(f"PM job {job['id']} already processed - skipping")
                     continue
                 
                 # Match job to resume profiles
                 match_result = self.keyword_matcher.match_job(job)
                 
-                if match_result['best_match_score'] >= self.config.MATCH_THRESHOLD:
+                if is_pm:
+                    pm_jobs_processed += 1
+                    self.logger.info(f"PM job {job['id']} matching result: score={match_result['best_match_score']}%, resume={match_result.get('best_resume', 'None')}, threshold={self.config.MATCH_THRESHOLD * 100}%")
+                
+                if match_result['best_match_score'] >= (self.config.MATCH_THRESHOLD * 100):  # Convert threshold to percentage
                     job['match_result'] = match_result
+                    
+                    if is_pm:
+                        pm_jobs_matched += 1
                     
                     # Extract concepts using Supabase if available
                     if self.extractor:
@@ -153,7 +173,7 @@ class JobApplicationSystem:
                 else:
                     # Suppress low-scoring jobs - only log if it's a PM role that didn't meet threshold
                     if match_result['best_match_score'] > 0:  # Only log actual PM roles
-                        self.logger.info(f"Job {job['id']} ({job.get('title', 'Unknown')}) scored {match_result['best_match_score']}% - SUPPRESSED (below {self.config.MATCH_THRESHOLD}% threshold)")
+                        self.logger.info(f"Job {job['id']} ({job.get('title', 'Unknown')}) scored {match_result['best_match_score']}% - SUPPRESSED (below {self.config.MATCH_THRESHOLD * 100}% threshold)")
                     
                     # Still mark as processed to avoid reprocessing
                     self.job_storage.mark_job_processed(job['id'])
@@ -161,6 +181,7 @@ class JobApplicationSystem:
             except Exception as e:
                 self.logger.error(f"Error processing job {job.get('id', 'unknown')}: {str(e)}")
         
+        self.logger.info(f"Job processing summary: {pm_jobs_found} PM jobs found, {pm_jobs_processed} processed, {pm_jobs_matched} matched above threshold")
         return processed_jobs
     
     def send_notifications(self, matched_jobs: List[Dict[str, Any]]):
