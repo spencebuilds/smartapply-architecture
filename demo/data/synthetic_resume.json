@@ -1,0 +1,63 @@
+{
+  "summary": "Product manager focused on internal platforms and developer productivity with 6+ years experience building scalable B2B systems.",
+  "skills": [
+    "platform", 
+    "developer tools", 
+    "observability", 
+    "billing",
+    "API design",
+    "cross-functional alignment",
+    "B2B SaaS",
+    "internal tooling",
+    "engineering productivity",
+    "technical debt prioritization"
+  ],
+  "experience": [
+    {
+      "title": "Senior Product Manager",
+      "company": "TechScale Corp",
+      "duration": "2022 - Present",
+      "bullets": [
+        "Drove internal platform roadmap to accelerate developer iteration speed by 40%",
+        "Improved reliability through developer tooling and standards adoption across 15 engineering teams", 
+        "Led cross-functional alignment on API design standards, reducing integration time by 60%",
+        "Owned billing platform migration serving 10M+ users with 99.9% uptime during transition"
+      ]
+    },
+    {
+      "title": "Product Manager",
+      "company": "DevTools Startup", 
+      "duration": "2020 - 2022",
+      "bullets": [
+        "Built observability platform from 0 to 1, enabling monitoring for distributed microservices",
+        "Managed B2B SaaS pricing strategy resulting in 150% ARR growth year-over-year",
+        "Collaborated with engineering leadership on technical debt reduction saving $2M annually",
+        "Established developer community engagement increasing SDK adoption by 200%"
+      ]
+    },
+    {
+      "title": "Associate Product Manager",
+      "company": "Enterprise Software Co",
+      "duration": "2019 - 2020", 
+      "bullets": [
+        "Supported platform infrastructure improvements for high-scale systems serving 50M+ requests/day",
+        "Conducted vendor evaluation and build vs buy analysis for internal tooling investments",
+        "Partnered with DevOps teams on engineering productivity initiatives reducing deployment time by 50%"
+      ]
+    }
+  ],
+  "education": {
+    "degree": "BS Computer Science",
+    "school": "State University",
+    "year": "2019"
+  },
+  "certifications": [
+    "AWS Solutions Architect Associate",
+    "Product Management Certification"
+  ],
+  "technical_background": {
+    "languages": ["Python", "JavaScript", "SQL"],
+    "platforms": ["AWS", "Kubernetes", "Docker"],
+    "tools": ["Jira", "Figma", "Datadog", "PostHog"]
+  }
+}

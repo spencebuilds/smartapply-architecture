@@ -1,148 +1,98 @@
-# Automated Job Application System
+# SmartApply Architecture (Public Demo)
 
-An intelligent job application automation system that monitors job postings from multiple sources, matches them against resume profiles using keyword analysis, and sends notifications through Slack.
+## What This Is
 
-## Features
+A sanitized, portfolio-friendly showcase of how I design and implement a human-in-the-loop, vocabulary-aware job search backend. This demonstrates production-ready architecture patterns and PM execution skills without exposing proprietary algorithms.
 
-- **Multi-Source Job Fetching**: Automatically retrieves job postings from Lever and Greenhouse APIs
-- **Intelligent Matching**: Uses keyword analysis to match jobs against predefined resume profiles
-- **Smart Notifications**: Sends detailed Slack notifications for jobs with 80%+ match scores
-- **Airtable Integration**: Stores matched jobs for tracking and application management
-- **Duplicate Prevention**: Avoids reprocessing the same jobs using local storage
-- **Automated Scheduling**: Runs every 15 minutes with configurable intervals
-- **Comprehensive Logging**: Detailed logging for monitoring and debugging
+## Architecture Highlights
 
-## Quick Start
+- **Human-in-the-Loop Design**: System where humans provide analysis through structured API endpoints
+- **Production Database Schema**: 19-table PostgreSQL schema with UUIDs, RLS policies, and strategic indexes
+- **Vocabulary Translation Framework**: Service architecture for company-specific term mapping
+- **Resume Delta System**: Granular tracking of resume optimizations with validation guardrails
+- **Observability**: Built-in logging, metrics, and audit trails
 
-1. **Set up your environment variables** (see Configuration section below)
-2. **Run the system**: `python main.py`
-3. **Monitor notifications** in your configured Slack channel
+## What's Included
 
-The system will automatically:
-- Check for new jobs every 15 minutes
-- Match jobs against your resume profiles
-- Send Slack notifications for good matches (80%+ score)
-- Store matched jobs in Airtable for tracking
+✅ **Production-style schema** (UUIDs, RLS, indexes)  
+✅ **Service skeletons** (translator/observability/delta)  
+✅ **Synthetic demo data + notebook**  
+✅ **API stubs** for validating the human JSON bundle  
+✅ **Architecture documentation** with system diagrams  
 
-## Configuration
+## What's Excluded (On Purpose)
 
-Set these environment variables in your Replit Secrets:
+❌ Proprietary vocabulary mappings  
+❌ Real resumes and case studies  
+❌ Actual concept correlations  
+❌ Claude/LLM logic  
+❌ Private integrations  
+❌ Production API keys  
 
-### Required
-- `SLACK_BOT_TOKEN`: Your Slack bot token
-- `SLACK_CHANNEL_ID`: Slack channel ID for notifications
-- `AIRTABLE_API_KEY`: Your Airtable API key
-- `AIRTABLE_BASE_ID`: Your Airtable base ID
+## How to Run
 
-### Optional
-- `TARGET_COMPANIES`: No longer required - system now fetches all available jobs
-- `MATCH_THRESHOLD`: Minimum match score for notifications (default: 80.0)
-- `CHECK_INTERVAL_MINUTES`: How often to check for jobs (default: 15)
-- `AIRTABLE_TABLE_NAME`: Airtable table name (default: "Job Applications")
-- `LOG_LEVEL`: Logging level (default: "INFO")
+```bash
+# Install dependencies
+pip install fastapi uvicorn jupyter
 
-## Resume Profiles
+# Run the API demo
+uvicorn app.main:app --reload
 
-The system includes three specialized resume profiles:
-
-### Resume A: Platform Infrastructure
-Keywords include: platform, infrastructure, microservices, api, scalability, aws, kubernetes, data, analytics, technical product, cloud, ci/cd, observability, cross-functional
-
-### Resume B: Developer Tools & Observability  
-Keywords include: developer tools, observability, devops, monitoring, alerting, instrumentation, platform engineering, internal tools, logging, on-call, incident, runbooks
-
-### Resume C: Billing & Revenue Platform
-Keywords include: billing, pricing, monetization, payments, revenue, invoicing, payment processor, checkout, stripe, subscription, fintech, business model
-
-### Custom Profiles
-Add custom profiles by setting the `RESUME_PROFILES` environment variable with JSON format:
-
-```json
-{
-  "Custom_Profile": {
-    "keywords": ["keyword1", "keyword2", "keyword3"],
-    "description": "Description of this profile"
-  }
-}
+# Open demo notebook
+jupyter notebook demo/matching_demo.ipynb
 ```
 
-## API Setup
+The API will be available at `http://localhost:8000` with interactive docs at `/docs`.
 
-### Slack Bot Setup
-1. Go to https://api.slack.com/apps
-2. Create a new app for your workspace
-3. Add OAuth permissions: `chat:write`, `channels:read`
-4. Install the app to your workspace
-5. Copy the Bot User OAuth Token as `SLACK_BOT_TOKEN`
-6. Get your channel ID by right-clicking the channel and copying the link
+## System Overview
 
-### Airtable Setup
-1. Create a new base in Airtable
-2. Create a table called "Job Applications" (or set custom name in `AIRTABLE_TABLE_NAME`)
-3. Get your API key from https://airtable.com/account
-4. Get your base ID from the base URL
-
-## Architecture
-
-```
-job-application-system/
-├── api_clients/          # API integration modules
-│   ├── lever_client.py   # Lever API client
-│   ├── greenhouse_client.py # Greenhouse API client
-│   ├── slack_client.py   # Slack notifications
-│   └── airtable_client.py # Airtable storage
-├── matching/             # Job matching engine
-│   ├── keyword_matcher.py # Keyword matching logic
-│   └── resume_profiles.py # Resume profile definitions
-├── storage/              # Data storage
-│   └── job_storage.py    # Job deduplication
-├── utils/                # Utilities
-│   └── logger.py         # Logging configuration
-├── main.py               # Main application
-├── config.py             # Configuration management
-└── scheduler.py          # Job scheduling
+```mermaid
+flowchart LR
+    A[Job Posting] --> B[Human Role Analysis]
+    B --> C[Resume Optimization]
+    C --> D[JSON Bundle]
+    D --> E[(Supabase in Prod)]
+    D --> F[Demo API Validate]
 ```
 
-## Monitoring
+## Key Components
 
-The system provides comprehensive logging:
-- Console output for real-time monitoring
-- Log file (`job_application_system.log`) for historical data
-- Slack status messages for system events
+### Database Schema (`sql/schema.sql`)
+- 19 tables with UUID primary keys
+- Row Level Security (RLS) policies
+- Strategic indexes for performance
+- Audit trails and timestamps
 
-## Customization
+### Human-in-the-Loop API
+- Role analysis validation
+- Resume optimization tracking
+- Translation event logging
+- Anti-fabrication guardrails
 
-### Adding New Job Sources
-1. Create a new client in `api_clients/`
-2. Implement the `fetch_jobs()` method
-3. Add to the main job fetching loop in `main.py`
+### Service Architecture
+- **TranslatorService**: Vocabulary mapping (stubbed)
+- **ObservabilityService**: Logging and metrics
+- **ResumeDeltaService**: Resume change validation
 
-### Custom Matching Logic
-Modify `matching/keyword_matcher.py` to implement:
-- Different scoring algorithms
-- Additional matching criteria
-- Industry-specific keyword weighting
+## Why This Matters
 
-### Notification Formats
-Customize Slack message formatting in `api_clients/slack_client.py`
+As a PM who builds, this showcases:
+- **Systems thinking**: Comprehensive data modeling and service design
+- **Production readiness**: Schema design, validation, observability
+- **Human-centered design**: API that works with human analysts
+- **Security awareness**: RLS policies, input validation, audit trails
 
-## Troubleshooting
+## Roadmap Ideas
 
-### Common Issues
-- **404 errors**: Some companies don't use public APIs - this is normal
-- **Authentication errors**: Verify your API keys are correct
-- **No jobs found**: Check that target companies use Lever/Greenhouse
-- **Low match scores**: Review and update your resume profile keywords
+- LLM fallback integration
+- Predictive scoring algorithms  
+- Enterprise hiring insights
+- Multi-tenant architecture
 
-### Debugging
-- Check the log file for detailed error information
-- Use `LOG_LEVEL=DEBUG` for verbose logging
-- Monitor the console output for real-time status
+## Portfolio Context
 
-## Support
+This is a **sanitized showcase** of architecture and execution patterns. The full system includes proprietary vocabulary engines, real job data processing, and advanced ML pipelines that aren't included here for competitive reasons.
 
-For issues or questions:
-1. Check the log files for error details
-2. Verify all environment variables are set correctly
-3. Ensure API keys have proper permissions
-4. Review the company names in `TARGET_COMPANIES`
+---
+
+*Built with FastAPI, PostgreSQL, and Python. Designed for scale and maintainability.*

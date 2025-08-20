@@ -1,0 +1,67 @@
+[
+  {
+    "id": "job_demo_001",
+    "company_name": "DevExperience Co",
+    "role_title": "Product Manager, Developer Experience",
+    "job_description": "Own developer productivity and integration tooling. Collaborate cross-functionally with engineering teams to define roadmap priorities. Drive adoption of internal developer platforms and improve developer satisfaction metrics. Experience with API design, SDK development, and developer community engagement preferred.",
+    "requirements": ["developer tooling", "SDK basics", "cross-functional alignment", "API design", "developer community", "productivity metrics"],
+    "location": "San Francisco, CA (Remote)",
+    "department": "Product",
+    "source": "demo",
+    "application_url": "https://example.com/jobs/devx-pm",
+    "posting_date": "2025-08-15",
+    "salary_range": "$180k - $220k"
+  },
+  {
+    "id": "job_demo_002", 
+    "company_name": "PaymentTech",
+    "role_title": "PM, Billing Platform",
+    "job_description": "Lead billing platform features and drive revenue accuracy automation. Partner with finance and engineering to build scalable billing infrastructure. Own pricing strategy implementation and subscription lifecycle management. Strong background in B2B SaaS billing, usage-based pricing models preferred.",
+    "requirements": ["billing", "revenue metrics", "platform roadmap", "B2B SaaS", "subscription management", "pricing strategy"],
+    "location": "New York, NY",
+    "department": "Product",
+    "source": "demo",
+    "application_url": "https://example.com/jobs/billing-pm",
+    "posting_date": "2025-08-10",
+    "salary_range": "$170k - $210k"
+  },
+  {
+    "id": "job_demo_003",
+    "company_name": "CloudInfra Systems", 
+    "role_title": "Senior Product Manager, Observability",
+    "job_description": "Define and execute observability product strategy for enterprise customers. Build comprehensive monitoring, logging, and alerting solutions. Work closely with SRE and platform engineering teams. Experience with distributed systems, microservices monitoring, and enterprise sales cycles required.",
+    "requirements": ["observability", "monitoring systems", "distributed systems", "enterprise sales", "platform engineering", "SRE collaboration"],
+    "location": "Seattle, WA (Hybrid)",
+    "department": "Platform Products", 
+    "source": "demo",
+    "application_url": "https://example.com/jobs/observability-pm",
+    "posting_date": "2025-08-12",
+    "salary_range": "$190k - $240k"
+  },
+  {
+    "id": "job_demo_004",
+    "company_name": "DataPlatform Inc",
+    "role_title": "Product Manager, Internal Tools",
+    "job_description": "Drive internal tooling strategy to improve engineering productivity across 200+ person engineering org. Own build vs buy decisions, vendor evaluation, and internal platform roadmap. Partner with DevOps and Infrastructure teams to define developer experience improvements.",
+    "requirements": ["internal tools", "engineering productivity", "vendor evaluation", "platform strategy", "DevOps collaboration", "build vs buy"],
+    "location": "Austin, TX (Remote friendly)",
+    "department": "Engineering Productivity",
+    "source": "demo", 
+    "application_url": "https://example.com/jobs/internal-tools-pm",
+    "posting_date": "2025-08-18",
+    "salary_range": "$160k - $200k"
+  },
+  {
+    "id": "job_demo_005",
+    "company_name": "FinTech Innovations",
+    "role_title": "Staff Product Manager, Platform Infrastructure", 
+    "job_description": "Lead platform infrastructure product strategy serving 50M+ users. Define API architecture, scalability roadmap, and developer platform evolution. Collaborate with engineering leadership on technical debt prioritization and platform reliability. 8+ years PM experience in high-scale systems required.",
+    "requirements": ["platform infrastructure", "API architecture", "scalability", "high-scale systems", "technical debt", "developer platforms"],
+    "location": "Remote (US/Canada)",
+    "department": "Platform",
+    "source": "demo",
+    "application_url": "https://example.com/jobs/platform-infra-staff-pm", 
+    "posting_date": "2025-08-20",
+    "salary_range": "$220k - $280k"
+  }
+]

@@ -1,0 +1,35 @@
+flowchart LR
+    A[Job Posting] --> B[Human Role Analysis]
+    B --> C[Resume Optimization]
+    C --> D[JSON Bundle]
+    D --> E[(Supabase in Prod)]
+    D --> F[Demo API Validate]
+    
+    G[Vocabulary Translation] --> H[Concept Mappings]
+    H --> I[Learning Loop]
+    
+    J[Observability] --> K[Metrics Collection]
+    K --> L[Health Monitoring]
+    
+    subgraph "Human-in-the-Loop Flow"
+        B
+        C
+        D
+    end
+    
+    subgraph "Learning System"  
+        G
+        H
+        I
+    end
+    
+    subgraph "Monitoring"
+        J
+        K
+        L
+    end
+    
+    subgraph "Data Layer"
+        E
+        F
+    end

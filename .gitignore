@@ -1,0 +1,80 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+.env
+.env.local
+.pythonlibs/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Replit
+.replit
+.upm
+replit.nix
+replit_zip_error_log.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets and Config
+config.py
+.env*
+!.env.example
+secrets.json
+credentials.json
+
+# Real Data (keep synthetic demo data)
+real_jobs.json
+real_resumes/
+production_data/
+user_data/
+
+# Dependencies
+node_modules/
+.npm
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Test coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Temporary files
+tmp/
+temp/
+.tmp
