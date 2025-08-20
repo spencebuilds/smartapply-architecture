@@ -1,0 +1,303 @@
+Got it. Here’s a tight, step‑by‑step requirements update that matches your current flow (no Claude, human-in-the-loop) while staying forward‑compatible with the Rev A schema the Replit agent already deployed.
+
+SmartApply — Human‑in‑the‑Loop v0 Requirements (No Claude)
+0) Feature flags & config
+
+USE_CLAUDE_FALLBACK = false
+
+MATCH_THRESHOLD = 0.10 (keep for calibration; we can raise later)
+
+Disable Slack for now (no notify/apply flows).
+
+1) Source of truth for “analysis”
+
+You (human) review a job post and produce:
+
+a fit assessment,
+
+the exact vocabulary translations you used,
+
+safe resume edits (delta only: rephrase / reorder / emphasize / omit),
+
+a recommended resume version.
+
+The system’s job is to persist that into Supabase with full traceability.
+
+2) Data flow (single job)
+
+Job posting fetched/stored (already in job_postings).
+
+You analyze and generate JSON (see payloads below).
+
+Replit Agent receives JSON → writes to Supabase across:
+
+role_analyses
+
+resume_optimizations
+
+resume_deltas
+
+translation_events (+ translation_event_mappings)
+
+optionally applications (when you actually apply)
+
+That’s it—no model calls, no Slack, no Airtable.
+
+3) Payload contracts (what you send to Replit)
+A) Role analysis (create first)
+
+Target table: role_analyses
+
+{
+  "job_posting_id": "<uuid-from-job_postings>",
+  "user_id": "<uuid-from-users>",
+  "analyst_type": "human",
+  "overall_fit_score": 86,
+  "fit_reasoning": "Strong match on internal tools/devx; terminology mismatch explains low raw keyword score.",
+  "key_matches": {
+    "case_study:great_expectations": "Data quality platform aligns with 'workflow reliability' requirement.",
+    "case_study:pendo_analytics": "Cross-functional adoption → 'tool adoption & satisfaction' KPI."
+  },
+  "vocabulary_gaps": {
+    "work management tooling": "internal platform / developer productivity",
+    "DevX": "developer experience / platform engineering",
+    "integration tooling": "developer tooling / platform tooling"
+  },
+  "missing_requirements": ["SDK ownership at scale"], 
+  "red_flags": "None",
+  "optimization_strategy": "Translate platform→productivity lexicon; foreground adoption metrics.",
+  "resume_version_recommended": "Resume D - Internal Tools & Productivity",
+  "confidence_level": 8,
+  "estimated_application_priority": "high"
+}
+
+
+Notes
+
+key_matches and vocabulary_gaps are JSONB on the table—use plain key/value maps.
+
+analyst_type=human is important for auditing.
+
+B) Resume optimization (create second)
+
+Target table: resume_optimizations
+
+{
+  "role_analysis_id": "<uuid-from-role_analyses>",
+  "master_resume_id": "<uuid-from-master_resumes>",
+  "optimization_deltas": {
+    "summary": {
+      "op": "rephrase",
+      "from": "Platform PM focused on infra and scale.",
+      "to": "Product manager for developer productivity and internal platforms driving faster iteration."
+    },
+    "section_order": {
+      "op": "reorder",
+      "from": ["Experience", "Selected Impact", "Skills"],
+      "to":   ["Experience", "Developer Productivity Highlights", "Skills"]
+    }
+  },
+  "optimization_reasoning": "Company uses 'work management', 'iteration planning'—translate vocabulary without adding claims.",
+  "optimized_resume_text": "<full optimized ATS text here>",
+  "optimized_file_url": null,
+  "vocabulary_translations": {
+    "platform infrastructure": "work management tooling / internal platform",
+    "stakeholder management": "multi-functional collaboration",
+    "developer tools": "developer experience (DevX)"
+  },
+  "case_studies_highlighted": ["<case_study_uuid_1>", "<case_study_uuid_2>"],
+  "ats_score_estimate": 88,
+  "human_review_status": "approved",
+  "human_review_notes": "Approved by Spencer; no new skills/metrics added."
+}
+
+
+Guardrails (enforced by Replit before insert)
+
+optimization_deltas ops ∈ {rephrase, reorder, emphasize, omit}.
+
+No new bullets that lack a master_bullet_id reference (see C below).
+
+C) Resume deltas (bullet-level, create third)
+
+Target table: resume_deltas
+Purpose: normalize changes and prevent fabricated experience.
+
+For every changed bullet from master_bullets:
+
+{
+  "resume_optimization_id": "<uuid-from-resume_optimizations>",
+  "master_bullet_id": "<uuid-from-master_bullets>",
+  "operation": "rephrase", 
+  "from_text": "Led platform engineering roadmap for pricing data.",
+  "to_text":   "Drove developer productivity roadmap for pricing data workflows.",
+  "concept_ids": ["<concept_uuid_cross_functional>", "<concept_uuid_internal_tools>"],
+  "notes": "Vocabulary translation only; facts unchanged."
+}
+
+
+Important:
+
+No insert allowed without a master_bullet_id.
+
+If you omit:
+
+{
+  "resume_optimization_id": "<uuid>",
+  "master_bullet_id": "<uuid>",
+  "operation": "omit",
+  "from_text": "Older infra bullet less relevant here.",
+  "to_text": null,
+  "concept_ids": [],
+  "notes": "Removed to meet 1-page constraint."
+}
+
+D) Translation events (audit + learning)
+
+Target table: translation_events (+ rows in translation_event_mappings)
+
+Create one event per optimization capturing what translations you actually used.
+
+{
+  "application_id": null, 
+  "role_analysis_id": "<uuid>",
+  "user_id": "<uuid>",
+  "event_type": "success", 
+  "original_terms": ["work management tooling", "DevX", "integration tooling"],
+  "translated_terms": ["internal platform", "developer experience", "developer tooling"],
+  "mapping_ids": ["<concept_mapping_uuid_1>", "<concept_mapping_uuid_2>"],
+  "claude_api_used": false,
+  "api_cost": 0.0,
+  "processing_time_ms": 1200
+}
+
+
+If a term didn’t exist in concept_mappings yet (and you created it by hand), send mapping_ids: [] and also post the mapping upsert payload (below).
+
+E) Concept mapping upserts (only when you create a new mapping)
+
+Target table: concept_mappings (upsert by lowercased raw_term + concept_id + company_id nullable)
+
+{
+  "raw_term": "work management tooling",
+  "concept_id": "<uuid-of-internal_tools_productivity>",
+  "company_id": "<uuid-of-spotify-or-null>",
+  "confidence_score": 0.80,
+  "successful_match_count": 0,
+  "user_id": "<uuid>"
+}
+
+F) Applications (when you actually apply)
+
+Target: applications then application_events
+
+{
+  "job_posting_id": "<uuid>",
+  "user_id": "<uuid>",
+  "role_analysis_id": "<uuid>",
+  "resume_optimization_id": "<uuid>",
+  "application_date": "2025-08-19",
+  "application_method": "direct",
+  "cover_letter_used": false,
+  "status": "applied",
+  "current_stage": "applied",
+  "next_action": "Follow up in 5 business days",
+  "next_action_date": "2025-08-26",
+  "notes": "Submitted via company site."
+}
+
+
+Then an application_events row:
+
+{
+  "application_id": "<uuid>",
+  "event_type": "status_change",
+  "event_description": "Applied via company career site",
+  "event_date": "2025-08-19T10:45:00Z",
+  "metadata": {"resume_version": "Resume D"}
+}
+
+4) Minimal backend surface (for Replit to implement)
+
+Create three FastAPI endpoints (no models):
+
+POST /human/role-analysis
+
+Body: A) Role analysis
+
+Returns: { "role_analysis_id": "<uuid>" }
+
+POST /human/resume-optimization
+
+Body: B) Resume optimization + array of C) resume deltas
+
+Validation: every delta must reference an existing master_bullets.id; operation in allowed set; reject if to_text introduces new tech/metrics not present in from_text (simple numeric/skill diff check is fine).
+
+Returns: { "resume_optimization_id": "<uuid>" }
+
+POST /human/translation-event
+
+Body: D) Translation event (+ optional E) mapping upserts array)
+
+Server upserts any provided new mappings; links rows in translation_event_mappings.
+
+Returns: { "translation_event_id": "<uuid>" }
+
+Optional:
+
+POST /applications & POST /application-events (F) if you want Replit to log the application too.
+
+RLS: ensure all inserts use the authenticated user_id so owner policies apply.
+
+5) DB safeties (so we don’t break integrity)
+
+If not already in Rev A, ask Replit to add:
+
+CHECK constraint on resume_deltas.operation ∈ (‘rephrase’, ‘reorder’, ‘emphasize’, ‘omit’).
+
+FK resume_deltas.master_bullet_id -> master_bullets.id NOT NULL.
+
+Trigger on resume_optimizations:
+
+reject if any attached resume_deltas (same resume_optimization_id) contain a “new bullet” (i.e., null master_bullet_id) — but we already forbid that at API.
+
+Partial index on lower(raw_term) in concept_mappings (already have idx_concept_mappings_raw_term_lower) + unique (lower(raw_term), concept_id, coalesce(company_id,'00000000-0000-0000-0000-000000000000')).
+
+6) Operator checklist (your workflow)
+
+Pick job in UI/SQL (it’s in job_postings).
+
+Do analysis → produce JSON A.
+
+Generate safe resume text + deltas → JSON B + C.
+
+Record translations used → JSON D (+ E if new).
+
+If you apply, log application → JSON F.
+
+That’s the whole loop. You’re the “model”; Supabase is the memory.
+
+7) Future‑proofing (when we flip Claude/our API on)
+
+Keep the same endpoints and payloads.
+
+Switch analyst_type to hybrid or claude_api.
+
+Translator service can fetch mappings first; only call model for unknowns.
+
+The exact same audit trail (translation_events, translation_event_mappings) will show what the LLM proposed vs what you approved.
+
+8) Ready‑to‑paste Replit agent prompt (to wire this up fast)
+
+Task: Implement Human‑in‑the‑Loop endpoints and validators (no Claude).
+Config: USE_CLAUDE_FALLBACK=false, Slack off.
+Endpoints:
+
+POST /human/role-analysis → inserts into role_analyses (payload A) and returns role_analysis_id.
+
+POST /human/resume-optimization → inserts into resume_optimizations (payload B) and batch inserts resume_deltas (payload C). Validate per rules: ops ∈ {rephrase,reorder,emphasize,omit}; every delta must reference existing master_bullets.id; reject if to_text adds new numbers or skills not present in from_text (simple diff on integers and a stop‑list of skills). Return resume_optimization_id.
+
+POST /human/translation-event → inserts into translation_events (payload D). If mapping_upserts provided, upsert each into concept_mappings on (lower(raw_term), concept_id, coalesce(company_id, NIL_UUID)). Then insert linking rows into translation_event_mappings. Return translation_event_id.
+DB safeties: add CHECK on resume_deltas.operation, ensure FK not null, and unique index as specified.
+Auth/RLS: all inserts use authenticated user_id.
+Deliverables: FastAPI routes, Pydantic schemas mirroring payloads, Supabase client calls, unit tests for validators, and example curl scripts.
