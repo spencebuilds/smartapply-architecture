@@ -1,0 +1,69 @@
+{
+  "company": {
+    "name": "Waymo",
+    "domain": "waymo.com"
+  },
+  "job_posting": {
+    "external_id": "waymo-partner-trip-platform-2025-08",
+    "title": "Product Manager, Partner Trip Platform",
+    "location": "Mountain View, CA (Hybrid/Remote)",
+    "source": "Company Site",
+    "url": null,
+    "posted_at": "2025-08-19T00:00:00Z",
+    "tags": [
+      "partner platforms",
+      "B2B2C",
+      "integrations",
+      "autonomous vehicles",
+      "SQL",
+      "API",
+      "data-driven",
+      "cross-functional",
+      "reliability",
+      "mobility"
+    ],
+    "description_raw": "About the job: Waymo builds autonomous driving technology and the Waymo Driver, powering Waymo One and other vehicle platforms. The team has enabled 1M+ rider-only trips and runs public-road and simulation miles across 13+ U.S. states.\n\nYou will:\n• Define, develop, and launch products that expand Waymo’s ability to serve trips with partners, enabling broader access to Waymo technology across people and markets.\n• Collaborate with external partners to jointly build Waymo experiences on third‑party platforms.\n• Translate company‑level objectives and B2B + end‑customer needs into team‑level outcomes and a product roadmap backed by data and industry understanding.\n• Lead cross‑functional efforts across engineering, business, operations, regulatory, etc., to drive product decisions from conception to launch.\n\nYou have:\n• 5+ years product management experience.\n• Success in innovative, fast‑paced environments; strong problem‑solving, analytical skills, and product sense.\n• A well‑rounded mix of product development skills (e.g., user experience, product analytics, engineering depth) with strong execution.\n• Strong technical foundation; understanding of hardware/software systems underpinning autonomous vehicles; ability to partner with world‑class engineers.\n• Excellent written and verbal communication and influence skills across varied audiences.\n\nWe prefer:\n• Degree in CS/engineering (or prior engineering experience).\n• Strong data analysis skills (SQL, etc.).\n• Experience in B2B2C with external partners.\n• Domain knowledge in transportation/mobility/autonomy.\n\nTravel: ability to travel domestically as needed; internationally ~1×/year."
+  },
+  "resume_translation": {
+    "source_resume": "Resume A – General Platform & Data Infrastructure",
+    "target_resume": "Resume – Waymo Partner Trip Platform v1",
+    "translations": [
+      {
+        "mapping_key": "platform_infra->partner_platform_enablement",
+        "from_text": "Platform infrastructure & Databricks data mart",
+        "to_text": "Partner trip platform enablement with unified data foundation (Databricks)",
+        "confidence": 0.9
+      },
+      {
+        "mapping_key": "ci_cd_reliability->safety_release_risk",
+        "from_text": "95% fewer deployment errors; 62.5% fewer major incidents",
+        "to_text": "Reliability improvements supporting safer, lower‑risk releases (same metrics)",
+        "confidence": 0.9
+      },
+      {
+        "mapping_key": "pendo_rollout->partner_kpi_analytics",
+        "from_text": "Pendo rollout for pricing; tagging/governance; historical data sync via API",
+        "to_text": "Product analytics to inform partner experiences & KPIs (Pendo + historical API sync)",
+        "confidence": 0.85
+      },
+      {
+        "mapping_key": "integrations_microservices->external_partner_integrations",
+        "from_text": "Event‑driven microservice integrations (Balto)",
+        "to_text": "Partner‑facing microservice integrations for AI/NLP; +300% workflow automation",
+        "confidence": 0.85
+      },
+      {
+        "mapping_key": "ml_routing->b2b2c_enablement",
+        "from_text": "ML‑driven routing tool (Clever)",
+        "to_text": "B2B2C partner workflow enablement via ML routing to improve conversion",
+        "confidence": 0.8
+      }
+    ]
+  },
+  "application": {
+    "status": "targeting",
+    "channel": "Company Site",
+    "resume_label": "Resume – Waymo Partner Trip Platform v1",
+    "notes": "Not applied yet. Resume reframed to emphasize partner platforms/B2B2C, cross‑functional leadership, reliability at scale, and data‑backed roadmaps. Mobility domain addressed via high‑scale transactional platforms and safety/reliability outcomes."
+  }
+}
