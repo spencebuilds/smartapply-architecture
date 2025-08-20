@@ -1,0 +1,19 @@
+# SmartApply Human-in-the-Loop Dependencies
+# Core dependencies for human-loop mode (minimal)
+
+# Database and API
+supabase>=2.0.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# FastAPI for human endpoints
+fastapi>=0.100.0
+uvicorn>=0.23.0
+pydantic>=2.0.0
+
+# Job scheduling (keep for background ingestion)
+schedule>=1.2.0
+
+# Optional (disabled by feature flags)
+# slack-sdk>=3.21.0  # Only when ENABLE_SLACK=true
+# airtable>=0.3.1    # Only when ENABLE_AIRTABLE=true

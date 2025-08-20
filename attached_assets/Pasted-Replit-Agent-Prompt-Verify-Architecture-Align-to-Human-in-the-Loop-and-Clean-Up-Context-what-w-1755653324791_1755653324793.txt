@@ -1,0 +1,239 @@
+Replit Agent Prompt — Verify Architecture, Align to Human‑in‑the‑Loop, and Clean Up
+
+Context (what we’re doing now)
+SmartApply is running in a human‑in‑the‑loop mode: I (the human) analyze a job and craft safe resume deltas; the system persists everything to Supabase for learning and tracking. No Slack, no Airtable, no Claude/LLM calls right now. We’ll re‑enable model fallback later, but the code should be feature‑flagged and dormant for now.
+
+Your mission
+
+Verify our current repository and Supabase project fully support this human‑in‑the‑loop flow.
+
+Fix any divergences (config, schema constraints, endpoints).
+
+Remove or gate redundant code (Slack/Airtable/LLM) behind feature flags so the running system is clean and minimal.
+
+Produce a short report at the end with everything you checked, changed, and why.
+
+0) Safety Snapshot (DB + Code)
+
+Create a DB backup schema and CTAS copies for critical tables:
+
+create schema if not exists backup;
+do $$
+declare t text;
+begin
+  for t in
+    select tablename
+    from pg_tables
+    where schemaname = 'public'
+      and tablename in (
+        'companies','concepts','users','concept_mappings','job_postings','job_posting_concepts',
+        'master_resumes','master_bullets','resume_optimizations','resume_deltas',
+        'role_analyses','applications','application_events','translation_events',
+        'company_term_styles','translation_event_mappings','ingest_runs','api_calls','llm_cache'
+      )
+  loop
+    execute format('drop table if exists backup.%I cascade; create table backup.%I as table public.%I with data;', t, t, t);
+  end loop;
+end $$;
+
+
+Create a git tag/branch pre-human-loop-cleanup so we can roll back.
+
+1) Config & Feature Flags — align to human‑in‑the‑loop
+
+In config.py (or equivalent), set:
+
+USE_CLAUDE_FALLBACK = False
+
+MATCH_THRESHOLD = 0.10 (calibration; we’ll raise later)
+
+ENABLE_SLACK = False
+
+ENABLE_AIRTABLE = False
+
+Ensure the app does not import or initialize Slack/Airtable clients when these flags are False. If imports side‑effect, lazy‑import or guard the code paths.
+
+Update .env.example and the live .env:
+
+Remove requiredness of SLACK_* and AIRTABLE_* vars when flags are off.
+
+Keep SUPABASE_* vars and any ingestion company list vars.
+
+Output: a diff showing the flags and any guarded code paths.
+
+2) Supabase Schema & RLS — verification and guardrails
+
+Verify Rev A tables exist (19 tables) and the important RLS owner policies on:
+master_resumes, role_analyses, resume_optimizations, applications, application_events, translation_events.
+
+Confirm indexes:
+
+idx_concept_mappings_raw_term_lower
+
+idx_job_postings_company_name, idx_job_postings_posting_date
+
+idx_job_posting_concepts_job_posting_id
+
+idx_llm_cache_key
+
+user‑scoped indexes on applications/translation_events/master_resumes
+
+Add or confirm core guardrails:
+
+resume_deltas.operation check:
+
+alter table resume_deltas
+  add constraint resume_deltas_op_chk
+  check (operation in ('rephrase','reorder','emphasize','omit'));
+
+
+resume_deltas.master_bullet_id is NOT NULL and FK to master_bullets(id).
+
+Enforce dedup on jobs:
+
+If we have external_id + source, add:
+
+create unique index if not exists uq_job_ext_source
+  on job_postings (lower(coalesce(external_id,'')), lower(source));
+
+
+Also keep a unique job_url where not null:
+
+create unique index if not exists uq_job_url
+  on job_postings (lower(job_url))
+  where job_url is not null;
+
+
+concept_mappings uniqueness (future‑proof + human use now):
+
+create unique index if not exists uq_mapping_term_concept_company
+  on concept_mappings (lower(raw_term), concept_id, coalesce(company_id,'00000000-0000-0000-0000-000000000000'));
+
+
+Output: SQL results confirming constraints/policies exist (or were added).
+
+3) API Surface — human endpoints only (no LLM)
+
+Implement or verify these endpoints (FastAPI or Next.js API routes). They should not call any LLM. Validate inputs and enforce guardrails.
+
+POST /human/role-analysis
+
+Body → insert into role_analyses:
+
+fields: job_posting_id, user_id, analyst_type='human', overall_fit_score, fit_reasoning, key_matches (JSONB), vocabulary_gaps (JSONB), missing_requirements[], red_flags, optimization_strategy, resume_version_recommended, confidence_level, estimated_application_priority, created_at
+
+Returns: { role_analysis_id }
+
+POST /human/resume-optimization
+
+Body → insert into resume_optimizations and batch into resume_deltas.
+
+Validation:
+
+Each delta must reference existing master_bullets.id (no new bullets).
+
+operation ∈ {rephrase, reorder, emphasize, omit}.
+
+Simple anti‑fabrication check: reject if to_text adds new numerics not present in from_text or adds new skills not present in the user’s master_bullets / skills set (use a basic token set and integers regex check).
+
+Returns: { resume_optimization_id }
+
+POST /human/translation-event
+
+Body → insert into translation_events.
+
+If mapping_upserts present: upsert rows into concept_mappings using the unique index above; then insert linking rows in translation_event_mappings.
+
+Returns: { translation_event_id }
+
+(Optional now, but useful) POST /applications and POST /application-events
+
+Write to applications and application_events with provided timestamps.
+
+Tests: add small unit tests for validators (ops set; master_bullet FK; anti‑fabrication numeric/skill guard).
+
+4) Ingestion & Matching — DB‑only path
+
+Ensure the ingestion jobs (Lever/Greenhouse) still run on schedule (15min).
+
+In Translator/Matching services, bypass LLM completely:
+
+Use DB‑only lookups from concept_mappings + company_term_styles.
+
+If no mapping, do not call any model; return unmapped gap (that’s fine in human mode).
+
+Confirm ingest_runs and any API metrics are still written (no Slack/Airtable side effects).
+
+Output: a short log from a single cycle showing:
+
+companies polled,
+
+new rows in job_postings,
+
+rows in job_posting_concepts.
+
+5) Redundancy Cleanup
+
+Remove or gate the following when flags are False:
+
+slack_events_server.py, slack_client.py, slack_event_handler.py (or keep but fully gated).
+
+airtable_client.py and any Airtable writes.
+
+Any local JSON de‑dupe that’s superseded by DB constraints; if a local cache is still used, ensure it’s optional and cleared.
+
+Update requirements.txt:
+
+If Slack/Airtable packages are no longer imported at runtime with flags off, move them to an extras section (commented) or remove for now.
+
+Add a README “Runtime Profiles” section documenting:
+
+Human‑loop profile (current): flags off → minimal deps.
+
+Hybrid/LLM profile (future): flags on → extra deps.
+
+6) Health Checks & Acceptance Criteria
+
+Create a simple scripts/self_check.py (or makefile task) that:
+
+Verifies feature flags are set as required.
+
+Pings DB, lists presence of all 19 tables.
+
+Confirms the constraints and indexes above exist.
+
+Runs a dry‑run validation on a sample resume_optimization payload (with one delta) to ensure guardrails pass.
+
+Outputs a compact JSON “OK report”.
+
+Accept when:
+
+Flags: USE_CLAUDE_FALLBACK=False, ENABLE_SLACK=False, ENABLE_AIRTABLE=False in effect.
+
+No Slack/Airtable initializations executed at runtime.
+
+Endpoints 1–3 exist and pass unit tests.
+
+Guardrails enforced (attempts to add new bullets/metrics/skills are rejected).
+
+Ingestion runs and writes rows without Slack/Airtable code paths.
+
+DB shows constraints + RLS policies; dedup indices active.
+
+self_check.py prints an “all green” JSON.
+
+7) Final Deliverables
+
+Change report (markdown): what you verified/changed/removed, with diffs/screenshots where relevant.
+
+.env.example updated for human‑loop profile.
+
+Self‑check output pasted into the report.
+
+Test logs (unit tests for validators).
+
+Backup note: where the backup schema snapshot and git tag were created.
+
+Reminder: Do not add any new automation (no Slack auto‑apply, no LLM calls). Keep the code paths, but feature‑flagged off. The running system should be lean and aligned to human‑in‑the‑loop persistence and tracking.
+
+When done, please paste your verification report.

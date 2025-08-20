@@ -21,6 +21,10 @@ args = "Slack Events Server"
 task = "workflow.run"
 args = "Job Monitor with Learning"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Human Loop API Server"
+
 [[workflows.workflow]]
 name = "Slack Events Server"
 author = "agent"
@@ -44,6 +48,22 @@ args = "python start_job_monitor.py"
 [workflows.workflow.metadata]
 outputType = "console"
 
+[[workflows.workflow]]
+name = "Human Loop API Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python -m uvicorn app.main_api:app --host 0.0.0.0 --port 8000"
+waitForPort = 8000
+
+[workflows.workflow.metadata]
+outputType = "console"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 8000
+externalPort = 8000

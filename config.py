@@ -12,9 +12,11 @@ class Config:
     def __init__(self):
         """Initialize configuration from environment variables."""
         
-        # Service Integration Flags
-        self.USE_SLACK = os.getenv("USE_SLACK", "false").lower() == "true"
-        self.USE_AIRTABLE = os.getenv("USE_AIRTABLE", "false").lower() == "true"
+        # Service Integration Flags - Disabled for Human-in-the-Loop
+        self.USE_SLACK = os.getenv("USE_SLACK", "false").lower() == "true"  # Disabled
+        self.USE_AIRTABLE = os.getenv("USE_AIRTABLE", "false").lower() == "true"  # Disabled
+        self.ENABLE_SLACK = os.getenv("ENABLE_SLACK", "false").lower() == "true"  # Master flag
+        self.ENABLE_AIRTABLE = os.getenv("ENABLE_AIRTABLE", "false").lower() == "true"  # Master flag
         
         # API Keys and Tokens (optional now)
         self.LEVER_API_KEY = os.getenv("LEVER_API_KEY", "")
@@ -28,8 +30,8 @@ class Config:
         # Job Matching Configuration - temporary calibration threshold
         self.MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD", "0.10"))
         
-        # SmartApply Rev A Configuration
-        self.USE_CLAUDE_FALLBACK = os.getenv("USE_CLAUDE_FALLBACK", "true").lower() == "true"
+        # SmartApply Human-in-the-Loop Configuration
+        self.USE_CLAUDE_FALLBACK = os.getenv("USE_CLAUDE_FALLBACK", "false").lower() == "true"  # Disabled for human-loop
         self.CLAUDE_DAILY_LIMIT_PER_COMPANY = int(os.getenv("CLAUDE_DAILY_LIMIT_PER_COMPANY", "10"))
         self.LLM_CACHE_TTL_DAYS = int(os.getenv("LLM_CACHE_TTL_DAYS", "7"))
         

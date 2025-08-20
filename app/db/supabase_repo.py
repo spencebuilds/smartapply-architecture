@@ -303,6 +303,192 @@ class SupabaseRepo:
             self.logger.error(f"Error upserting application: {str(e)}")
             raise
     
+    # HUMAN-IN-THE-LOOP OPERATIONS
+    def store_role_analysis(self, job_posting_id: str, user_id: str, analyst_type: str,
+                           overall_fit_score: float, fit_reasoning: str,
+                           key_matches: Dict[str, str], vocabulary_gaps: Dict[str, str],
+                           missing_requirements: List[str], red_flags: str,
+                           optimization_strategy: str, resume_version_recommended: str,
+                           confidence_level: int, estimated_application_priority: str) -> str:
+        """Store role analysis from human analyst. Returns role_analysis_id."""
+        try:
+            analysis_data = {
+                "job_posting_id": job_posting_id,
+                "user_id": user_id,
+                "analyst_type": analyst_type,
+                "overall_fit_score": overall_fit_score,
+                "fit_reasoning": fit_reasoning,
+                "key_matches": key_matches,
+                "vocabulary_gaps": vocabulary_gaps,
+                "missing_requirements": missing_requirements,
+                "red_flags": red_flags,
+                "optimization_strategy": optimization_strategy,
+                "resume_version_recommended": resume_version_recommended,
+                "confidence_level": confidence_level,
+                "estimated_application_priority": estimated_application_priority
+            }
+            
+            result = self.sb.table("role_analyses").insert(analysis_data).execute()
+            
+            if result.data:
+                return result.data[0]["id"]
+            
+            raise Exception("Failed to store role analysis")
+            
+        except Exception as e:
+            self.logger.error(f"Error storing role analysis: {str(e)}")
+            raise
+    
+    def store_resume_optimization(self, role_analysis_id: str, master_resume_id: str,
+                                 optimization_deltas: Dict[str, Any], optimization_reasoning: str,
+                                 optimized_resume_text: str, optimized_file_url: Optional[str],
+                                 vocabulary_translations: Dict[str, str],
+                                 case_studies_highlighted: List[str], ats_score_estimate: float,
+                                 human_review_status: str, human_review_notes: str) -> str:
+        """Store resume optimization. Returns resume_optimization_id."""
+        try:
+            optimization_data = {
+                "role_analysis_id": role_analysis_id,
+                "master_resume_id": master_resume_id,
+                "optimization_deltas": optimization_deltas,
+                "optimization_reasoning": optimization_reasoning,
+                "optimized_resume_text": optimized_resume_text,
+                "optimized_file_url": optimized_file_url,
+                "vocabulary_translations": vocabulary_translations,
+                "case_studies_highlighted": case_studies_highlighted,
+                "ats_score_estimate": ats_score_estimate,
+                "human_review_status": human_review_status,
+                "human_review_notes": human_review_notes
+            }
+            
+            result = self.sb.table("resume_optimizations").insert(optimization_data).execute()
+            
+            if result.data:
+                return result.data[0]["id"]
+            
+            raise Exception("Failed to store resume optimization")
+            
+        except Exception as e:
+            self.logger.error(f"Error storing resume optimization: {str(e)}")
+            raise
+    
+    def store_resume_delta(self, resume_optimization_id: str, master_bullet_id: str,
+                          operation: str, from_text: str, to_text: Optional[str],
+                          concept_ids: List[str], notes: str) -> str:
+        """Store individual resume delta. Returns resume_delta_id."""
+        try:
+            delta_data = {
+                "resume_optimization_id": resume_optimization_id,
+                "master_bullet_id": master_bullet_id,
+                "operation": operation,
+                "from_text": from_text,
+                "to_text": to_text,
+                "concept_ids": concept_ids,
+                "notes": notes
+            }
+            
+            result = self.sb.table("resume_deltas").insert(delta_data).execute()
+            
+            if result.data:
+                return result.data[0]["id"]
+            
+            raise Exception("Failed to store resume delta")
+            
+        except Exception as e:
+            self.logger.error(f"Error storing resume delta: {str(e)}")
+            raise
+    
+    def store_translation_event(self, application_id: Optional[str], role_analysis_id: str,
+                               user_id: str, event_type: str, original_terms: List[str],
+                               translated_terms: List[str], mapping_ids: List[str],
+                               claude_api_used: bool, api_cost: float,
+                               processing_time_ms: int) -> str:
+        """Store translation event. Returns translation_event_id."""
+        try:
+            event_data = {
+                "application_id": application_id,
+                "role_analysis_id": role_analysis_id,
+                "user_id": user_id,
+                "event_type": event_type,
+                "original_terms": original_terms,
+                "translated_terms": translated_terms,
+                "claude_api_used": claude_api_used,
+                "api_cost": api_cost,
+                "processing_time_ms": processing_time_ms
+            }
+            
+            result = self.sb.table("translation_events").insert(event_data).execute()
+            
+            if result.data:
+                event_id = result.data[0]["id"]
+                
+                # Create mapping relationships
+                for mapping_id in mapping_ids:
+                    self.sb.table("translation_event_mappings").insert({
+                        "translation_event_id": event_id,
+                        "concept_mapping_id": mapping_id
+                    }).execute()
+                
+                return event_id
+            
+            raise Exception("Failed to store translation event")
+            
+        except Exception as e:
+            self.logger.error(f"Error storing translation event: {str(e)}")
+            raise
+    
+    def upsert_concept_mapping(self, raw_term: str, concept_id: str,
+                              company_id: Optional[str], confidence_score: float,
+                              successful_match_count: int, user_id: str) -> str:
+        """Upsert concept mapping. Returns concept_mapping_id."""
+        try:
+            # Try to find existing mapping
+            query = self.sb.table("concept_mappings").select("id").eq("raw_term", raw_term.lower()).eq("concept_id", concept_id)
+            if company_id:
+                query = query.eq("company_id", company_id)
+            else:
+                query = query.is_("company_id", "null")
+            
+            result = query.execute()
+            
+            if result.data:
+                # Update existing
+                mapping_id = result.data[0]["id"]
+                self.sb.table("concept_mappings").update({
+                    "confidence_score": confidence_score,
+                    "successful_match_count": successful_match_count
+                }).eq("id", mapping_id).execute()
+                return mapping_id
+            else:
+                # Create new
+                mapping_data = {
+                    "raw_term": raw_term.lower(),
+                    "concept_id": concept_id,
+                    "company_id": company_id,
+                    "confidence_score": confidence_score,
+                    "successful_match_count": successful_match_count,
+                    "user_id": user_id
+                }
+                
+                result = self.sb.table("concept_mappings").insert(mapping_data).execute()
+                if result.data:
+                    return result.data[0]["id"]
+            
+            raise Exception("Failed to upsert concept mapping")
+            
+        except Exception as e:
+            self.logger.error(f"Error upserting concept mapping: {str(e)}")
+            raise
+    
+    def get_master_bullet(self, bullet_id: str) -> Optional[Dict[str, Any]]:
+        """Get master bullet by ID."""
+        try:
+            result = self.sb.table("master_bullets").select("*").eq("id", bullet_id).execute()
+            return result.data[0] if result.data else None
+        except Exception as e:
+            self.logger.error(f"Error getting master bullet {bullet_id}: {str(e)}")
+            return None
+
     # LEARNING/TRANSLATION OPERATIONS
     def record_translation_event(self, concept_mapping_id: str, application_id: str,
                                 event_type: str = "success") -> str:
