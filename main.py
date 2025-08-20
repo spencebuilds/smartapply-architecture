@@ -147,7 +147,32 @@ class JobApplicationSystem:
                 if is_pm:
                     pm_jobs_processed += 1
                     self.logger.info(f"PM job {job['id']} matching result: score={match_result['best_match_score']}%, resume={match_result.get('best_resume', 'None')}, threshold={self.config.MATCH_THRESHOLD * 100}%")
+                    
+                    # Store ALL PM jobs in Supabase regardless of score - this is key for optimization
+                    if self.repo:
+                        try:
+                            fit_score = float(match_result["best_match_score"]) / 100.0
+                            reasoning = match_result.get("recommendation", "")
+                            vocabulary_gaps = []  # Could be computed later
+                            strategy = f"Use {match_result.get('best_resume','')}"
+                            
+                            self.repo.store_job_analysis(
+                                company_name=job.get("company", ""),
+                                role_title=job.get("title", ""),
+                                job_url=job.get("url", ""),
+                                job_description=job.get("description", ""),
+                                fit_score=fit_score,
+                                reasoning=reasoning,
+                                vocabulary_gaps=vocabulary_gaps,
+                                optimization_strategy=strategy,
+                            )
+                            
+                            self.logger.info(f"Stored PM job analysis in Supabase: {job['title']} (fit: {fit_score:.2f})")
+                            
+                        except Exception as e:
+                            self.logger.warning(f"Supabase storage failed for PM job {job.get('id', 'unknown')}: {e}")
                 
+                # Only send notifications for jobs above threshold
                 if match_result['best_match_score'] >= (self.config.MATCH_THRESHOLD * 100):  # Convert threshold to percentage
                     job['match_result'] = match_result
                     
@@ -166,17 +191,14 @@ class JobApplicationSystem:
                     
                     processed_jobs.append(job)
                     
-                    # Mark job as processed
-                    self.job_storage.mark_job_processed(job['id'])
-                    
                     self.logger.info(f"Job {job['id']} matched with score {match_result['best_match_score']}% - SENDING NOTIFICATION")
                 else:
-                    # Suppress low-scoring jobs - only log if it's a PM role that didn't meet threshold
-                    if match_result['best_match_score'] > 0:  # Only log actual PM roles
-                        self.logger.info(f"Job {job['id']} ({job.get('title', 'Unknown')}) scored {match_result['best_match_score']}% - SUPPRESSED (below {self.config.MATCH_THRESHOLD * 100}% threshold)")
-                    
-                    # Still mark as processed to avoid reprocessing
-                    self.job_storage.mark_job_processed(job['id'])
+                    # Log suppressed PM jobs for visibility
+                    if is_pm and match_result['best_match_score'] > 0:
+                        self.logger.info(f"PM job {job['id']} ({job.get('title', 'Unknown')}) scored {match_result['best_match_score']}% - STORED BUT SUPPRESSED (below {self.config.MATCH_THRESHOLD * 100}% threshold)")
+                
+                # Mark job as processed regardless of score
+                self.job_storage.mark_job_processed(job['id'])
                 
             except Exception as e:
                 self.logger.error(f"Error processing job {job.get('id', 'unknown')}: {str(e)}")
@@ -196,29 +218,8 @@ class JobApplicationSystem:
                 if self.airtable_client:
                     self.airtable_client.store_job(job)
                 
-                # Persist job + role analysis to Supabase (if available)
-                if self.repo:
-                    try:
-                        fit_score = float(job["match_result"]["best_match_score"]) / 100.0
-                        reasoning = job["match_result"].get("recommendation", "")
-                        vocabulary_gaps = []  # Could be computed later
-                        strategy = f"Use {job['match_result'].get('best_resume','')}"
-                        
-                        self.repo.store_job_analysis(
-                            company_name=job.get("company", ""),
-                            role_title=job.get("title", ""),
-                            job_url=job.get("url", ""),
-                            job_description=job.get("description", ""),
-                            fit_score=fit_score,
-                            reasoning=reasoning,
-                            vocabulary_gaps=vocabulary_gaps,
-                            optimization_strategy=strategy,
-                        )
-                        
-                        self.logger.info(f"Stored job analysis in Supabase for {job['title']}")
-                        
-                    except Exception as e:
-                        self.logger.warning(f"Supabase persistence failed for job {job.get('id', 'unknown')}: {e}")
+                # Note: PM jobs are already stored in Supabase during matching phase above
+                # This notification phase only handles external integrations (Slack/Airtable)
                 
                 self.logger.info(f"Sent notification for job: {job['title']} at {job['company']}")
                 
